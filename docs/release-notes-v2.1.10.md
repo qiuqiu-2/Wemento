@@ -16,7 +16,6 @@ v2.1.10 是首个以“微念（Wemento）”名称发布的版本。Wemento 是
 
 - Windows x64：`wemento-2.1.10-setup.exe`
 - 自动更新元数据：`latest.yml`
-- Windows 安装包 SHA-256：`A700C3B8A5EE4883A21C6E790453F35D6742EF850EC744469FAF83C9D7801F90`
 
 安装包当前未进行商业代码签名，Windows 可能显示 SmartScreen 提示。请只从本仓库的 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases) 下载，并在需要时核对 Release 页面提供的 SHA-256。
 
