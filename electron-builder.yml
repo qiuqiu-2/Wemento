@@ -1,5 +1,6 @@
+# Keep the legacy app identifier to preserve compatibility with existing installations.
 appId: com.wechatexplorer.app
-productName: WechatExplorer
+productName: Wemento
 afterPack: scripts/after-pack.cjs
 directories:
   buildResources: build
@@ -33,7 +34,7 @@ win:
   icon: icon.ico
   # WCDB's Windows runtime checks the host executable name. The dev runtime is
   # electron.exe, so keep the packaged executable compatible while preserving
-  # WechatExplorer as the product/shortcut name.
+  # Wemento as the product/shortcut name.
   executableName: electron
 nsis:
   oneClick: false
@@ -48,9 +49,9 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     # The bundled WCDB bridge accepts Electron as its internal host name. The
-    # public app name and bundle identifier remain WechatExplorer-specific.
+    # public app name is Wemento while the legacy bundle identifier remains compatible.
     CFBundleName: Electron
-    CFBundleDisplayName: WechatExplorer
+    CFBundleDisplayName: Wemento
     NSCameraUsageDescription: Application requests access to the device's camera.
     NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
@@ -71,6 +72,6 @@ appImage:
 npmRebuild: false
 publish:
   provider: github
-  owner: Wxw-Gu
-  repo: WechatExplorer
+  owner: qiuqiu-2
+  repo: Wemento
   releaseType: release

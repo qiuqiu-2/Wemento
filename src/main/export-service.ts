@@ -756,7 +756,7 @@ export async function runExport(
       total: messages.length,
       percent: request.format === 'html' ? 18 : 20
     })
-    const root = join(app.getPath('documents'), 'WechatExplorer', '导出')
+    const root = join(app.getPath('documents'), 'Wemento', '导出')
     await fs.mkdir(root, { recursive: true })
     const ext = request.format === 'markdown' ? 'md' : request.format
     const outputFolder =

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AppUpdateState } from '../../../../../shared/app-update'
 
-const REPOSITORY_URL = 'https://github.com/Wxw-Gu/WechatExplorer'
+const REPOSITORY_URL = 'https://github.com/qiuqiu-2/Wemento'
 const RELEASES_URL = `${REPOSITORY_URL}/releases`
 
 function formatBytes(value?: number): string {
@@ -54,13 +54,13 @@ export function AboutPage({ onNotice }: { onNotice: (message: string) => void })
       <header className="settings-page-header">
         <div>
           <h1>关于</h1>
-          <p>WechatExplorer 本地微信聊天记录工作台。</p>
+          <p>Wemento 本地微信聊天记录工作台。</p>
         </div>
       </header>
       <div className="settings-page-scroll">
         <div className="settings-page-content">
           <section className="settings-card about-identity-card">
-            <div><span className="settings-card-kicker">当前版本</span><strong>WechatExplorer</strong><small>v{update.currentVersion}</small></div>
+            <div><span className="settings-card-kicker">当前版本</span><strong>Wemento</strong><small>v{update.currentVersion}</small></div>
             <a href={REPOSITORY_URL} target="_blank" rel="noreferrer">GitHub 仓库</a>
           </section>
 

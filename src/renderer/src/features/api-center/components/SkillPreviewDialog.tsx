@@ -16,12 +16,12 @@ export function SkillPreviewDialog({
       className="api-markdown-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="WechatExplorer Reader Skill 预览"
+      aria-label="Wemento Reader Skill 预览"
     >
       <div>
         <header>
           <div>
-            <strong>WechatExplorer Reader</strong>
+            <strong>Wemento Reader</strong>
             <span>{version || 'v1.0'}</span>
           </div>
           <div>

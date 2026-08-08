@@ -366,9 +366,9 @@ export function ExportWorkspace({
   const targetPath =
     format === 'html'
       ? zip
-        ? `文稿/WechatExplorer/导出/${outputName}.zip`
-        : `文稿/WechatExplorer/导出/${outputName}/`
-      : `文稿/WechatExplorer/导出/${outputName}.${format === 'markdown' ? 'md' : format}`
+        ? `文稿/Wemento/导出/${outputName}.zip`
+        : `文稿/Wemento/导出/${outputName}/`
+      : `文稿/Wemento/导出/${outputName}.${format === 'markdown' ? 'md' : format}`
 
   return (
     <div className="export-workspace">

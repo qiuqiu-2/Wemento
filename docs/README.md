@@ -1,6 +1,6 @@
-# WechatExplorer 文档
+# Wemento 文档
 
-WechatExplorer 的文档按“你想完成什么”组织，而不是按源码模块组织。
+Wemento 的文档按“你想完成什么”组织，而不是按源码模块组织。
 
 ## 从这里开始
 
@@ -15,7 +15,7 @@ WechatExplorer 的文档按“你想完成什么”组织，而不是按源码�
 - [语音转文字](./user-guide/voice.md)
 - [导出聊天档案](./user-guide/export.md)
 - [防撤回](./user-guide/recall-protection.md)
-- [在微信里向 WechatExplorer 提问](./agent/agent-hub.md)
+- [在微信里向 Wemento 提问](./agent/agent-hub.md)
 - [数据、隐私与安全](./user-guide/privacy.md)
 - [常见问题与排查](./user-guide/troubleshooting.md)
 
@@ -26,7 +26,7 @@ WechatExplorer 的文档按“你想完成什么”组织，而不是按源码�
 
 ## 微信机器人和外部 Agent
 
-WechatExplorer 有两种不同的接入方式。微信机器人是普通用户可以直接使用的产品能力；Reader Skill 和 Local HTTP API 面向已经在使用 Codex、Claude Code、OpenClaw 等外部 Agent 的用户。
+Wemento 有两种不同的接入方式。微信机器人是普通用户可以直接使用的产品能力；Reader Skill 和 Local HTTP API 面向已经在使用 Codex、Claude Code、OpenClaw 等外部 Agent 的用户。
 
 | 你想做什么                                                            | 应该看哪里                                                                 |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------- |

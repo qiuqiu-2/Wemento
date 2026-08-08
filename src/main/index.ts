@@ -274,8 +274,8 @@ app.setName(
   process.platform === 'win32'
     ? 'WeFlow'
     : process.env['WXE_USER_DATA']
-      ? 'WechatExplorer Dev'
-      : 'WechatExplorer'
+      ? 'Wemento Dev'
+      : 'Wemento'
 )
 const isolatedUserData = process.env['WXE_USER_DATA']
 if (isolatedUserData) app.setPath('userData', isolatedUserData)
@@ -474,11 +474,11 @@ app.whenReady().then(async () => {
       return new Response('Media unavailable', { status: 500 })
     }
   })
-  console.log(`WechatExplorer main build: ${BUILD_MARK}`)
+  console.log(`Wemento main build: ${BUILD_MARK}`)
   appLogger.write({
     level: 'info',
     scope: 'lifecycle',
-    message: 'WechatExplorer 启动',
+    message: 'Wemento 启动',
     details: { build: BUILD_MARK, platform: process.platform, version: app.getVersion() }
   })
   process.on('uncaughtException', (error) => {
@@ -1631,7 +1631,7 @@ function buildTrayMenu(): Menu {
     },
     { type: 'separator' },
     {
-      label: '退出 WechatExplorer',
+      label: '退出 Wemento',
       click: () => {
         tray?.destroy()
         tray = null
@@ -1650,7 +1650,7 @@ function setupTray(): void {
       ? nativeImage.createEmpty()
       : image.resize({ width: traySize, height: traySize, quality: 'best' })
     tray = new Tray(trayImage)
-    tray.setToolTip('WechatExplorer')
+    tray.setToolTip('Wemento')
     tray.setContextMenu(buildTrayMenu())
     tray.on('click', () => showMainWindow())
   } catch (error) {

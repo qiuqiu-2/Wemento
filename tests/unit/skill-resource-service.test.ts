@@ -20,14 +20,14 @@ function environment(root: string, packaged: boolean) {
     appPath: join(root, 'application'),
     cwd: join(root, 'workspace'),
     resourcesPath: join(root, 'runtime', 'resources'),
-    execPath: join(root, 'runtime', 'WechatExplorer.exe'),
+    execPath: join(root, 'runtime', 'Wemento.exe'),
     packaged
   }
 }
 
 function writeSkill(filePath: string): void {
   mkdirSync(dirname(filePath), { recursive: true })
-  writeFileSync(filePath, '# WechatExplorer Reader\n', 'utf8')
+  writeFileSync(filePath, '# Wemento Reader\n', 'utf8')
 }
 
 describe('Reader Skill resource resolution', () => {

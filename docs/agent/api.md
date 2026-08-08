@@ -1,4 +1,4 @@
-# WechatExplorer Local HTTP API
+# Wemento Local HTTP API
 
 本文面向需要自己写集成的开发者。普通用户请先阅读[Agent 接入概览](./overview.md)。
 
@@ -57,7 +57,7 @@ curl -H "Authorization: Bearer $WECHATEXPLORER_API_TOKEN" \
 - `YYYY-MM-DD/HH:mm`：从该分钟开始的 60 秒；
 - 也可以使用 Unix 秒级 `startTime` 和 `endTime`。
 
-时间按运行 WechatExplorer 的本机时区解析。用户说“今天”“昨天”时，先调用 `current_time`，再根据返回的 `localDate` 计算日期，避免使用 Agent 自己的时区。
+时间按运行 Wemento 的本机时区解析。用户说“今天”“昨天”时，先调用 `current_time`，再根据返回的 `localDate` 计算日期，避免使用 Agent 自己的时区。
 
 ## 常用工作流
 

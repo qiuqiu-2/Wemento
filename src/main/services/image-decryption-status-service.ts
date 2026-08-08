@@ -28,7 +28,7 @@ export async function inspectImageDecryptionStatus(
   const imageDirectoryFound = hasImageDirectory(accountRoot)
   const stickerCacheFound =
     fs.existsSync(path.join(accountRoot, 'cache')) ||
-    fs.existsSync(path.join(os.homedir(), 'Documents', 'WechatExplorer', 'Emojis'))
+    fs.existsSync(path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis'))
   const dbConnected = chat.isReady()
   const [wechatRunning, decoder] = await Promise.all([
     isWechatRunning(),
@@ -287,7 +287,7 @@ export function buildImageTestDiagnosticLog(input: {
   const rootIsDirectory = rootExists ? safeIsDirectory(root) : false
   const resultCode = input.result.success ? 'SUCCESS' : input.result.code || 'UNKNOWN'
   return [
-    'WechatExplorer 图片解析测试日志（已脱敏）',
+    'Wemento 图片解析测试日志（已脱敏）',
     `时间：${new Date().toISOString()}`,
     `应用版本：${safeAppVersion()}`,
     `运行环境：${process.platform} ${process.arch}`,
