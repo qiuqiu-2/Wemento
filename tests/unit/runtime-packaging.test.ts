@@ -58,6 +58,26 @@ describe('production runtime packaging', () => {
     expect(config).toContain('node_modules/silk-wasm/**')
   })
 
+  it('patches the legacy NSIS current-user install-directory lookup', () => {
+    const projectPackage = JSON.parse(
+      readFileSync(resolve(__dirname, '../../package.json'), 'utf8')
+    ) as { pnpm?: { patchedDependencies?: Record<string, string> } }
+    expect(projectPackage.pnpm?.patchedDependencies?.['app-builder-lib@26.0.12']).toBe(
+      'patches/app-builder-lib@26.0.12.patch'
+    )
+
+    const electronBuilderRequire = createRequire(
+      nodeRequire.resolve('electron-builder/package.json')
+    )
+    const appBuilderPackage = electronBuilderRequire.resolve('app-builder-lib/package.json')
+    const multiUserTemplate = readFileSync(
+      join(dirname(appBuilderPackage), 'templates', 'nsis', 'multiUser.nsh'),
+      'utf8'
+    )
+    expect(multiUserTemplate).not.toContain("System::Call 'SHELL32::SHGetKnownFolderPath")
+    expect(multiUserTemplate).toContain('$LocalAppData\\Programs\\${APP_FILENAME}')
+  })
+
   it('rejects an app archive with missing runtime dependencies', async () => {
     const resources = join(root, 'asar-resources')
     const source = join(root, 'asar-source')

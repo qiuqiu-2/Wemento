@@ -8,7 +8,7 @@ v2.1.10 是首个以“微念（Wemento）”名称发布的版本。Wemento 是
 
 - 将应用、安装器、README、帮助入口和 GitHub 发布地址统一为 Wemento 品牌；
 - 增加“微念（Wemento）”名称含义、项目关系、分支职责和版本发布说明；
-- 修复部分 Windows 环境下启动安装器或执行安装时在 NSIS `System.dll` 中发生 `0xC0000005` 崩溃的问题；
+- 绕过 electron-builder 在解析当前用户安装目录时使用的旧版 NSIS `System.dll` 调用，修复安装器启动前发生的 `0xC0000005` 崩溃；
 - 改用安全的进程检测，安装器不再自动结束所有名为 `electron.exe` 的程序；
 - 保留 WCDB 所需的 `electron.exe` 主程序名以及已有应用标识、Reader Skill 路径和 `WECHATEXPLORER_API_TOKEN`，避免破坏现有兼容性。
 
