@@ -1,0 +1,23 @@
+diff --git a/templates/nsis/multiUser.nsh b/templates/nsis/multiUser.nsh
+index 3de631bf0ce5095d03062ba98a68c5249904911e..4af01297971cccda147b0e88e86364e074d53921 100644
+--- a/templates/nsis/multiUser.nsh
++++ b/templates/nsis/multiUser.nsh
+@@ -27,15 +27,7 @@ Var installMode
+     ${if} $perUserInstallationFolder != ""
+       StrCpy $INSTDIR $perUserInstallationFolder
+     ${else}
+-      StrCpy $0 "$LocalAppData\Programs"
+-      System::Store S
+-      # Win7 has a per-user programfiles known folder and this can be a non-default location
+-      System::Call 'SHELL32::SHGetKnownFolderPath(g "${FOLDERID_UserProgramFiles}", i ${KF_FLAG_CREATE}, p 0, *p .r2)i.r1'
+-      ${If} $1 == 0
+-        System::Call '*$2(&w${NSIS_MAX_STRLEN} .s)'
+-        StrCpy $0 $1
+-        System::Call 'OLE32::CoTaskMemFree(p r2)'
+-      ${endif}
+-      System::Store L
+-      StrCpy $INSTDIR "$0\${APP_FILENAME}"
++      # Avoid the legacy NSIS System.dll call to SHGetKnownFolderPath. It can
++      # access-violate on current Windows before the installer UI is created.
++      StrCpy $INSTDIR "$LocalAppData\Programs\${APP_FILENAME}"
+     ${endif}

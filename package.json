@@ -137,6 +137,9 @@
       "electron",
       "esbuild",
       "ffmpeg-static"
-    ]
+    ],
+    "patchedDependencies": {
+      "app-builder-lib@26.0.12": "patches/app-builder-lib@26.0.12.patch"
+    }
   }
 }

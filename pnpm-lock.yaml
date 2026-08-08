@@ -5,6 +5,11 @@ onlyBuiltDependencies:
   - esbuild
   - ffmpeg-static
 
+patchedDependencies:
+  app-builder-lib@26.0.12:
+    hash: gv5g7wccpsnb5htzl4h7vrbacq
+    path: patches/app-builder-lib@26.0.12.patch
+
 specifiers:
   '@electron-toolkit/eslint-config-prettier': ^3.0.0
   '@electron-toolkit/eslint-config-ts': ^3.1.0
@@ -2404,7 +2409,7 @@ packages:
     resolution: {integrity: sha512-j87o0j6LqPL3QRr8yid6c+Tt5gC7xNfYo6uQIQkorAC6MpeayVMZrEDzKmJJ/Hlv7EnOQpaRm53k6ktDYZyB6w==}
     dev: true
 
-  /app-builder-lib/26.0.12_dmg-builder@26.0.12:
+  /app-builder-lib/26.0.12_gv5g7wccpsnb5htzl4h7vrbacq_dmg-builder@26.0.12:
     resolution: {integrity: sha512-+/CEPH1fVKf6HowBUs6LcAIoRcjeqgvAeoSE+cl7Y7LndyQ9ViGPYibNk7wmhMHzNgHIuIbw4nWADPO+4mjgWw==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -2449,6 +2454,7 @@ packages:
       - bluebird
       - supports-color
     dev: true
+    patched: true
 
   /archiver/8.0.0:
     resolution: {integrity: sha512-fV1orZfsnPn9BaSByR/qE67rJCLJEy2Ox5bq7nJh+jquWaNh6Sfec75kJ2T6PtdGUbPQlrVoSVCEOa5SdiTQ1g==}
@@ -3229,7 +3235,7 @@ packages:
   /dmg-builder/26.0.12:
     resolution: {integrity: sha512-59CAAjAhTaIMCN8y9kD573vDkxbs1uhDcrFLHSgutYdPcGOU35Rf95725snvzEOy4BFB7+eLJ8djCNPmGwG67w==}
     dependencies:
-      app-builder-lib: 26.0.12_dmg-builder@26.0.12
+      app-builder-lib: 26.0.12_gv5g7wccpsnb5htzl4h7vrbacq_dmg-builder@26.0.12
       builder-util: 26.0.11
       builder-util-runtime: 9.3.1
       fs-extra: 10.1.0
@@ -3313,7 +3319,7 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
-      app-builder-lib: 26.0.12_dmg-builder@26.0.12
+      app-builder-lib: 26.0.12_gv5g7wccpsnb5htzl4h7vrbacq_dmg-builder@26.0.12
       builder-util: 26.0.11
       builder-util-runtime: 9.3.1
       chalk: 4.1.2
