@@ -1,6 +1,6 @@
-# 第一次使用 WechatExplorer
+# 第一次使用 Wemento
 
-如果你刚下载 WechatExplorer，只需要完成一条主线：
+如果你刚下载 Wemento，只需要完成一条主线：
 
 > 安装应用 → 连接微信数据 → 确认聊天已加载 → 搜索或提问。
 
@@ -17,9 +17,9 @@
 
 ## 2. 安装并启动
 
-1. 从 [GitHub Releases](https://github.com/Wxw-Gu/WechatExplorer/releases) 下载对应系统的安装包。
+1. 从 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases) 下载对应系统的安装包。
 2. Windows 使用 `-setup.exe` 安装；macOS 打开 `.dmg` 并将应用拖入“应用程序”。
-3. 启动 WechatExplorer，进入“第一次使用”页面。
+3. 启动 Wemento，进入“第一次使用”页面。
 
 macOS 如果提示无法验证开发者，请按系统提示允许打开。自动获取数据库密钥需要额外系统授权时，先阅读[macOS 数据访问说明](../platform/macos.md)。不要在不理解风险的情况下长期关闭系统安全保护。
 
@@ -77,12 +77,12 @@ macOS 如果提示无法验证开发者，请按系统提示允许打开。自�
 - [转写微信语音](./voice.md)
 - [导出聊天档案](./export.md)
 - [可选开启防撤回](./recall-protection.md)
-- [在微信里向 WechatExplorer 提问](../agent/agent-hub.md)
+- [在微信里向 Wemento 提问](../agent/agent-hub.md)
 - [让外部 Agent 查询微信历史](../agent/overview.md)
 
 ## 7. 想直接在微信里提问
 
-如果你希望直接在微信里向 WechatExplorer 提问，而不是另外配置 Codex 等外部 Agent，请使用 Agent Hub：
+如果你希望直接在微信里向 Wemento 提问，而不是另外配置 Codex 等外部 Agent，请使用 Agent Hub：
 
 1. 先完成上面的微信数据库连接，并确认“档案”里能看到聊天。
 2. 打开应用主导航中的“Agent”；页面标题为“Agent Hub”。

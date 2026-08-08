@@ -64,7 +64,7 @@ interface SelfInfo {
   accountRoot: string
 }
 
-const MAC_KEY_FAQ_URL = 'https://github.com/Wxw-Gu/WechatExplorer/blob/main/docs/mac-disable-sip.md'
+const MAC_KEY_FAQ_URL = 'https://github.com/qiuqiu-2/Wemento/blob/personal/docs/mac-disable-sip.md'
 const FIRST_USE_WELCOME_SEEN_KEY = 'wxe_first_use_welcome_seen'
 const MESSAGE_MONITOR_DEBOUNCE_MS = 8000
 const INITIAL_MESSAGE_COUNT = 20
@@ -798,7 +798,7 @@ function App(): React.ReactElement {
         })
         setStartupProgress({
           title: '正在加载账号信息...',
-          subtitle: '即将进入 WechatExplorer',
+          subtitle: '即将进入 Wemento',
           detail: '正在读取联系人和当前账号',
           percent: 70
         })
@@ -1804,7 +1804,7 @@ function App(): React.ReactElement {
         ? autoConnectSource === 'env'
           ? '检测到环境变量中的密钥'
           : '使用上次安全保存的密钥'
-        : 'WechatExplorer')
+        : 'Wemento')
     return (
       <div className={`boot-splash ${appearanceSettings.showStartupProgress ? '' : 'is-quiet'}`}>
         <div className="boot-splash-spinner" aria-hidden />

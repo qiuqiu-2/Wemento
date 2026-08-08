@@ -21,7 +21,7 @@ export class StickerService {
   private readonly cacheDir: string
 
   constructor(private readonly wcdb4Client?: Wcdb4Client | null) {
-    this.cacheDir = path.join(os.homedir(), 'Documents', 'WechatExplorer', 'Emojis')
+    this.cacheDir = path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis')
   }
 
   async resolveSticker(cdnUrl?: string, md5?: string): Promise<StickerResult> {
@@ -69,7 +69,7 @@ export class StickerService {
     const extensions = ['.gif', '.png', '.webp', '.jpg', '.jpeg']
     const cacheDirs = [
       this.cacheDir,
-      path.join(os.homedir(), 'Documents', 'WechatExplorer', 'Emojis')
+      path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis')
     ]
     for (const cacheDir of cacheDirs) {
       for (const ext of extensions) {
@@ -128,7 +128,7 @@ export class StickerService {
         url,
         {
           headers: {
-            'User-Agent': 'Mozilla/5.0 MicroMessenger WechatExplorer',
+            'User-Agent': 'Mozilla/5.0 MicroMessenger Wemento',
             Referer: 'https://weixin.qq.com/'
           }
         },

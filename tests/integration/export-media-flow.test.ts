@@ -874,7 +874,7 @@ describe('media export flow', () => {
     expect(firstSize).toBeGreaterThan(0)
     expect(readFileSync(second.outputPath!).subarray(0, 2).toString()).toBe('PK')
     const entries = execFileSync('unzip', ['-Z1', second.outputPath!], { encoding: 'utf8' })
-    const htmlPath = join(state.documents, 'WechatExplorer', '导出', 'zip-fixture', 'index.html')
+    const htmlPath = join(state.documents, 'Wemento', '导出', 'zip-fixture', 'index.html')
     const archive = readArchive(htmlPath)
     expect(entries).toContain('zip-fixture/index.html')
     expect(entries).toContain('zip-fixture/data/messages.js')
@@ -888,7 +888,7 @@ describe('media export flow', () => {
       true
     )
     expect(
-      readdirSync(join(state.documents, 'WechatExplorer', '导出')).some((name) =>
+      readdirSync(join(state.documents, 'Wemento', '导出')).some((name) =>
         name.startsWith('zip-fixture.zip.tmp-')
       )
     ).toBe(false)
@@ -929,7 +929,7 @@ describe('media export flow', () => {
     expect(cancelled).toEqual({ success: false, error: '已取消' })
     expect(readFileSync(first.outputPath!)).toEqual(completeZip)
     expect(
-      readdirSync(join(state.documents, 'WechatExplorer', '导出')).some((name) =>
+      readdirSync(join(state.documents, 'Wemento', '导出')).some((name) =>
         name.startsWith('zip-cancel-fixture.zip.tmp-')
       )
     ).toBe(false)

@@ -8,7 +8,7 @@ interface FirstUseWelcomeProps {
 }
 
 const GUIDE_URL =
-  'https://github.com/Wxw-Gu/WechatExplorer/blob/main/docs/user-guide/getting-started.md'
+  'https://github.com/qiuqiu-2/Wemento/blob/personal/docs/user-guide/getting-started.md'
 
 export function FirstUseWelcome({
   onDismiss,

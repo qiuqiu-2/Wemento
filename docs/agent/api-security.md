@@ -2,7 +2,7 @@
 
 ## 当前安全边界
 
-WechatExplorer 的本地 API 默认监听 `127.0.0.1:6131`。它面向同一台电脑上的 API Center、Reader Skill、CLI 和 Agent，不是公网网关，也不是带用户账户和细粒度权限 Scope 的服务。
+Wemento 的本地 API 默认监听 `127.0.0.1:6131`。它面向同一台电脑上的 API Center、Reader Skill、CLI 和 Agent，不是公网网关，也不是带用户账户和细粒度权限 Scope 的服务。
 
 ## Bearer Token
 

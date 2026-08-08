@@ -1,6 +1,6 @@
-# WechatExplorer WeChat Connector
+# Wemento WeChat Connector
 
-This repository-local service provides the minimal WeChat bridge required by WechatExplorer:
+This repository-local service provides the minimal WeChat bridge required by Wemento:
 
 - QR-code login with a single persisted credential
 - account discovery
@@ -22,4 +22,4 @@ Credential and synchronization state is stored under `~/.wechatexplorer/wechat-c
 
 ## Attribution
 
-Low-level protocol and media transport portions are distributed under the MIT license in [LICENSE](LICENSE). WechatExplorer-specific process management, webhook contract, product UI, and Agent Hub behavior live in the surrounding WechatExplorer project.
+Low-level protocol and media transport portions are distributed under the MIT license in [LICENSE](LICENSE). Wemento-specific process management, webhook contract, product UI, and Agent Hub behavior live in the surrounding Wemento project.

@@ -1,9 +1,11 @@
 {
-  "name": "wechatexplorer",
-  "version": "2.1.9",
+  "name": "wemento",
+  "version": "2.1.10",
   "packageManager": "pnpm@7.33.7",
-  "description": "macOS / Windows 本地优先的微信聊天记录搜索与 AI 工作台",
+  "description": "微念（Wemento）：macOS / Windows 本地优先的微信聊天记录搜索、整理与 AI 工作台",
   "keywords": [
+    "wemento",
+    "微念",
     "wechat",
     "wechat chat",
     "wechat history",
@@ -20,7 +22,11 @@
   "author": "Qingmao",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Wxw-Gu/WechatExplorer.git"
+    "url": "https://github.com/qiuqiu-2/Wemento.git"
+  },
+  "homepage": "https://github.com/qiuqiu-2/Wemento",
+  "bugs": {
+    "url": "https://github.com/qiuqiu-2/Wemento/issues"
   },
   "main": "./out/main/index.js",
   "scripts": {

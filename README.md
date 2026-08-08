@@ -1,7 +1,7 @@
-# WechatExplorer
+# 微念（Wemento）
 
 <p align="center">
-  <img src="./build/icon.png" width="120" alt="WechatExplorer Logo" />
+  <img src="./build/icon.png" width="120" alt="Wemento Logo" />
 </p>
 
 <h2 align="center">把微信聊过的事，找回来、问清楚、留下来</h2>
@@ -12,13 +12,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/Wxw-Gu/WechatExplorer?style=for-the-badge" alt="GitHub stars" />
-  <img src="https://img.shields.io/github/downloads/Wxw-Gu/WechatExplorer/total?style=for-the-badge" alt="GitHub downloads" />
-  <img src="https://img.shields.io/github/v/release/Wxw-Gu/WechatExplorer?style=for-the-badge" alt="Latest release" />
+  <img src="https://img.shields.io/github/stars/qiuqiu-2/Wemento?style=for-the-badge" alt="GitHub stars" />
+  <img src="https://img.shields.io/github/downloads/qiuqiu-2/Wemento/total?style=for-the-badge" alt="GitHub downloads" />
+  <img src="https://img.shields.io/github/v/release/qiuqiu-2/Wemento?style=for-the-badge" alt="Latest release" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/Wxw-Gu/WechatExplorer/releases"><b>下载 WechatExplorer</b></a>
+  <a href="https://github.com/qiuqiu-2/Wemento/releases"><b>下载微念（Wemento）</b></a>
   ·
   <a href="./docs/user-guide/getting-started.md"><b>第一次使用</b></a>
   ·
@@ -26,16 +26,18 @@
 </p>
 
 <p align="center">
-  <img src="./public/software-1.png" alt="WechatExplorer 主界面" />
+  <img src="./public/software-1.png" alt="微念（Wemento）主界面" />
 </p>
 
 <p align="center">
-  <img src="./public/机器人.png" alt="WechatExplorer 主界面" />
+  <img src="./public/机器人.png" alt="微念（Wemento）微信机器人界面" />
 </p>
 
-## WechatExplorer 是什么
+## 微念（Wemento）是什么
 
-WechatExplorer 是一个本地优先的微信聊天记录搜索与 AI 工作台。
+微念（Wemento）是一个本地优先的微信聊天记录搜索、整理与 AI 工作台。它帮助你把散落在聊天里的回忆、约定、资料和想法重新找回来，并以适合长期保存的方式留下来。
+
+“微念”里的“微”来自微信，也代表日常生活中细小但重要的片段；“念”代表记忆、牵挂与思考。英文名 Wemento 将 WeChat 与 memento（纪念、回忆）结合，表达“让微信里的记忆可被重新看见”的愿望。
 
 它可以帮你浏览、搜索和整理微信历史，也可以让 AI 帮你找回聊过的内容，并回到原始消息核对答案。
 
@@ -46,6 +48,9 @@ WechatExplorer 是一个本地优先的微信聊天记录搜索与 AI 工作台�
 > “技术交流群今天有哪些结论和待办？”
 
 它和普通聊天记录查看器最大的不同，是 AI 不只是告诉你答案，还会告诉你答案来自哪里。你可以看到答案参考了哪些内容、来自哪个会话和时间，再回到原始消息确认它有没有理解错。
+
+> [!NOTE]
+> 微念（Wemento）是基于 [WechatExplorer](https://github.com/Wxw-Gu/WechatExplorer) 的个人维护分支与发行版，保留上游项目的核心能力，并维护 Wemento 专属的 Windows 构建、兼容性修复和发布。仓库的 `main` 分支用于同步上游，`personal` 是 Wemento 的稳定集成与发行分支。
 
 ## 从你的任务开始
 
@@ -58,7 +63,7 @@ WechatExplorer 是一个本地优先的微信聊天记录搜索与 AI 工作台�
 | 把微信语音变成可搜索的文字                | [设置 → 语音转文字](./docs/user-guide/voice.md)         | 准备本地语音模型                     |
 | 把聊天保存成 HTML、Markdown、CSV 或 JSON  | [导出](./docs/user-guide/export.md)                     | 选择聊天、时间和格式，不需要 AI      |
 | 尽量保留之后捕获到的撤回消息              | [设置 → 防撤回](./docs/user-guide/recall-protection.md) | 默认关闭；开启前先了解写入和性能边界 |
-| 直接在微信里向 WechatExplorer 提问        | [微信机器人](./docs/agent/agent-hub.md)                 | 扫码连接机器人；总结类任务需要 AI    |
+| 直接在微信里向 Wemento 提问               | [微信机器人](./docs/agent/agent-hub.md)                 | 扫码连接机器人；总结类任务需要 AI    |
 | 让 Codex 等外部 Agent 查询微信历史        | [外部 Agent](./docs/agent/overview.md)                  | 安装 Reader Skill 并配置本机 Token   |
 
 ## 最核心的三个能力
@@ -76,7 +81,7 @@ WechatExplorer 是一个本地优先的微信聊天记录搜索与 AI 工作台�
 
 打开“问问微信”，选择搜索范围和时间，然后像提问一样描述你想找的内容。
 
-WechatExplorer 会先在本机查找候选消息，再把整理后的少量来源交给你配置的 AI 模型生成回答。你可以查看答案参考了哪些聊天、来自哪个人和时间，并从来源标记跳回原始消息核对；“查看检索详情”还会展示本次查找经历了哪些阶段。
+Wemento 会先在本机查找候选消息，再把整理后的少量来源交给你配置的 AI 模型生成回答。你可以查看答案参考了哪些聊天、来自哪个人和时间，并从来源标记跳回原始消息核对；“查看检索详情”还会展示本次查找经历了哪些阶段。
 
 <p align="center">
   <img src="./public/问一问.png" alt="问问微信与聊天来源" />
@@ -86,11 +91,11 @@ WechatExplorer 会先在本机查找候选消息，再把整理后的少量来�
 
 ### 直接在微信里问你的历史聊天
 
-打开应用中的“Agent”入口（页面标题为“Agent Hub”，对应微信机器人功能），扫码连接一个微信机器人账号。例如，你可以直接给机器人发送“最近 5 个会话”“张三最近和我聊了什么”，或者让它生成指定群聊的总结图片。WechatExplorer 会在本机读取已连接的聊天数据并把结果回复到微信。
+打开应用中的“Agent”入口（页面标题为“Agent Hub”，对应微信机器人功能），扫码连接一个微信机器人账号。例如，你可以直接给机器人发送“最近 5 个会话”“张三最近和我聊了什么”，或者让它生成指定群聊的总结图片。Wemento 会在本机读取已连接的聊天数据并把结果回复到微信。
 
 这个入口不要求另外安装 Codex、Claude Code 等外部 Agent。当前主要处理文字消息，不支持群发、定时任务或通用自主操作微信；总结和自然语言理解需要先配置 AI 服务。
 
-详细步骤和能力边界见[在微信里向 WechatExplorer 提问](./docs/agent/agent-hub.md)。
+详细步骤和能力边界见[在微信里向 Wemento 提问](./docs/agent/agent-hub.md)。
 
 ## 其他能力
 
@@ -119,13 +124,13 @@ WechatExplorer 会先在本机查找候选消息，再把整理后的少量来�
 
 ### 转写微信语音
 
-WechatExplorer 支持在本机转写单条或批量微信语音，结果可以参与本地知识库检索和 HTML 导出。转写本身不要求把语音文件发送给在线 AI；随后用于 AI 问答或日报时，文字会按对应功能的规则处理。
+Wemento 支持在本机转写单条或批量微信语音，结果可以参与本地知识库检索和 HTML 导出。转写本身不要求把语音文件发送给在线 AI；随后用于 AI 问答或日报时，文字会按对应功能的规则处理。
 
 详细说明：[语音转文字](./docs/user-guide/voice.md)
 
 ### 防撤回
 
-可选开启后，WechatExplorer 会尽量保留开启期间捕获到的撤回消息。该能力受微信版本和应用运行状态影响，不保证找回所有内容，也不能恢复开启前已经撤回的消息。
+可选开启后，Wemento 会尽量保留开启期间捕获到的撤回消息。该能力受微信版本和应用运行状态影响，不保证找回所有内容，也不能恢复开启前已经撤回的消息。
 
 详细说明：[防撤回](./docs/user-guide/recall-protection.md)
 
@@ -145,7 +150,7 @@ WechatExplorer 支持在本机转写单条或批量微信语音，结果可以�
 
 ```mermaid
 flowchart LR
-    A[本机微信数据] --> B[WechatExplorer 读取与解析]
+    A[本机微信数据] --> B[Wemento 读取与解析]
     B --> C[聊天档案]
     B --> D[本地知识库与搜索]
     D --> E[筛选相关聊天来源]
@@ -170,17 +175,27 @@ flowchart LR
 
 ## 支持平台与安装包
 
-| 平台    | 处理器架构                           | Releases 安装包 |
-| ------- | ------------------------------------ | --------------- |
-| Windows | x64                                  | `-setup.exe`    |
-| macOS   | Intel（x64）、Apple Silicon（arm64） | `.dmg`          |
+| 平台    | 处理器架构                           | Releases 安装包                  |
+| ------- | ------------------------------------ | -------------------------------- |
+| Windows | x64                                  | `wemento-<版本>-setup.exe`       |
+| macOS   | Intel（x64）、Apple Silicon（arm64） | `wemento-<版本>-<架构>.dmg`      |
 
 当前代码面向微信 4.x 数据结构。实际连接结果仍会受到微信客户端版本、账号数据状态和系统权限影响；macOS 首次连接可能需要按页面提示完成额外授权。
 
+## 版本与发布
+
+当前版本为 **v2.1.10**，这是首个以“微念（Wemento）”名称发布的版本。本次发布包含：
+
+- 更新应用、安装器、仓库链接与下载入口的 Wemento 品牌信息；
+- 修复部分 Windows 环境下安装器或安装后的程序无法打开的问题；
+- 保留 `electron.exe` 兼容名称以满足微信数据库连接组件要求，同时避免安装器误杀其他 Electron 程序。
+
+正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.10 发布说明](./docs/release-notes-v2.1.10.md)。
+
 ## 快速开始
 
-1. 从 [GitHub Releases](https://github.com/Wxw-Gu/WechatExplorer/releases) 下载安装包。
-2. 启动 WechatExplorer，按照“第一次使用”页面选择微信数据目录。
+1. 从 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases) 下载安装包。
+2. 启动 Wemento，按照“第一次使用”页面选择微信数据目录。
 3. 第一次使用请先点击“开始连接”，按页面提示准备连接组件并获取数据库密钥；只有已经有密钥的高级用户才需要“手动连接”。
 4. 连接成功后打开“档案”，确认联系人和聊天消息已经出现。
 5. 先在“档案”里搜索一句你记得的原话；这一步不需要 AI。
@@ -189,7 +204,7 @@ flowchart LR
 
 如果 macOS 页面提示处理 SIP，请先阅读对应说明。具体步骤和限制见[第一次使用](./docs/user-guide/getting-started.md)。
 
-完整步骤：[第一次使用 WechatExplorer](./docs/user-guide/getting-started.md)
+完整步骤：[第一次使用 Wemento](./docs/user-guide/getting-started.md)
 
 ## 配置 AI
 
@@ -239,10 +254,10 @@ pnpm test:e2e:build
 
 ## 支持与反馈
 
-遇到问题时，先查看[常见问题与排查](./docs/user-guide/troubleshooting.md)。提交 Issue 时请提供操作系统、微信版本、WechatExplorer 版本、复现步骤和已遮挡敏感信息的截图。
+遇到问题时，先查看[常见问题与排查](./docs/user-guide/troubleshooting.md)。提交 [Issue](https://github.com/qiuqiu-2/Wemento/issues) 时请提供操作系统、微信版本、Wemento 版本、复现步骤和已遮挡敏感信息的截图。
 
 请仅处理你有权访问的数据，并遵守适用的法律法规、组织政策和微信使用规则。数据库读取、解密、自动化和机器人能力都可能受平台版本与账号环境影响。
 
 ## 许可说明
 
-仓库中的第三方组件、模型和连接器遵循各自的许可证。当前仓库根目录未提供独立的项目 `LICENSE` 文件；贡献、复制或再分发前，请先向维护者确认 WechatExplorer 本身的许可范围。
+仓库中的第三方组件、模型和连接器遵循各自的许可证。Wemento 基于上游 WechatExplorer 维护；当前仓库根目录未提供独立的项目 `LICENSE` 文件，贡献、复制或再分发前，请先向上游及本仓库维护者确认适用的许可范围。

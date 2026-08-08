@@ -261,7 +261,7 @@ export function resolveWindowsNativeAccountRoot(
     .find((candidate) => candidate && isAsciiPath(candidate))
   if (!publicRoot || !isAsciiPath(publicRoot)) return accountRoot
 
-  const bridgeRoot = path.join(publicRoot, 'WechatExplorer', 'path-bridges')
+  const bridgeRoot = path.join(publicRoot, 'Wemento', 'path-bridges')
   const bridgePath = path.join(
     bridgeRoot,
     crypto

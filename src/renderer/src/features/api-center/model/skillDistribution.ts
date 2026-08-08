@@ -12,6 +12,6 @@ export const AGENT_INSTALL_TARGETS: { value: AgentInstallTarget; label: string }
 ]
 
 export const githubLatestUrl =
-  'https://github.com/Wxw-Gu/WechatExplorer/tree/main/docs/skill/wechatexplorer-reader'
+  'https://github.com/qiuqiu-2/Wemento/tree/personal/docs/skill/wechatexplorer-reader'
 
 export const githubVersionedInstallUrl: string | null = null

@@ -74,7 +74,7 @@ const embedAvatar = async (source: string | undefined, name: string): Promise<st
     if (/^https?:\/\//i.test(source)) {
       const response = await fetch(source, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 WechatExplorer',
+          'User-Agent': 'Mozilla/5.0 Wemento',
           Referer: 'https://weixin.qq.com/'
         },
         signal: AbortSignal.timeout(8000)

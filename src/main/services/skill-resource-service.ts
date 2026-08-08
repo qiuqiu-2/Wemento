@@ -5,7 +5,7 @@ import { isPackagedRuntime } from '../runtime-mode'
 
 const SKILL_RELATIVE_PATH = join('skill', 'wechatexplorer-reader', 'SKILL.md')
 const GITHUB_URL =
-  'https://github.com/Wxw-Gu/WechatExplorer/tree/main/docs/skill/wechatexplorer-reader'
+  'https://github.com/qiuqiu-2/Wemento/tree/personal/docs/skill/wechatexplorer-reader'
 const SKILL_VERSION = 'v1.1'
 
 type SkillResourceSource = 'development' | 'bundled'
@@ -90,7 +90,7 @@ export function resolveSkillResourceStatus(
       available: false,
       source,
       githubUrl: GITHUB_URL,
-      error: `未找到 WechatExplorer Reader Skill 文件（已检查：${candidates.map((item) => item.path).join('；')}）`
+      error: `未找到 Wemento Reader Skill 文件（已检查：${candidates.map((item) => item.path).join('；')}）`
     }
   }
   return {
