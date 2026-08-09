@@ -1,7 +1,97 @@
 import { app, BrowserWindow } from 'electron'
-import { autoUpdater, type ProgressInfo } from 'electron-updater'
+import { autoUpdater, NsisUpdater, type AppUpdater, type ProgressInfo } from 'electron-updater'
+import type { InstallOptions } from 'electron-updater/out/BaseUpdater'
+import { copyFileSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
+import os from 'os'
+import path from 'path'
 import type { AppUpdateCheckResult, AppUpdateState } from '../../shared/app-update'
 import { isPackagedRuntime } from '../runtime-mode'
+import { getApplicationDataRoot, getUpdateCacheRoot } from '../data-paths'
+
+const UPDATE_STAGING_DIRECTORY = path.join(os.tmpdir(), 'wemento-update-staging')
+
+function cleanupStagedUpdateInstallers(): void {
+  try {
+    for (const entry of readdirSync(UPDATE_STAGING_DIRECTORY)) {
+      const target = path.join(UPDATE_STAGING_DIRECTORY, entry)
+      if (statSync(target).isFile()) rmSync(target, { force: true })
+    }
+    rmSync(UPDATE_STAGING_DIRECTORY, { force: true })
+  } catch {
+    // The installer that launched the app can still be locked. Retry next launch.
+  }
+}
+
+function isInsideDirectory(directory: string, candidate: string): boolean {
+  const relative = path.relative(directory, candidate)
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))
+}
+
+class UnifiedDataNsisUpdater extends NsisUpdater {
+  private stagedInstallerPath: string | null = null
+
+  protected override get installerPath(): string | null {
+    return this.stagedInstallerPath || super.installerPath
+  }
+
+  protected override doInstall(options: InstallOptions): boolean {
+    const downloadedInstaller = super.installerPath
+    if (downloadedInstaller && isInsideDirectory(getApplicationDataRoot(), downloadedInstaller)) {
+      try {
+        mkdirSync(UPDATE_STAGING_DIRECTORY, { recursive: true })
+        const stagedPath = path.join(
+          UPDATE_STAGING_DIRECTORY,
+          `wemento-update-${process.pid}-${Date.now()}-${path.basename(downloadedInstaller)}`
+        )
+        copyFileSync(downloadedInstaller, stagedPath)
+        this.stagedInstallerPath = stagedPath
+      } catch (error) {
+        this.dispatchError(
+          new Error(`无法暂存更新安装包：${error instanceof Error ? error.message : String(error)}`)
+        )
+        return false
+      }
+    }
+    return super.doInstall(options)
+  }
+}
+
+function createApplicationUpdater(): AppUpdater {
+  if (process.platform !== 'win32') return autoUpdater
+
+  const adapter = {
+    whenReady: (): Promise<void> => app.whenReady(),
+    get version(): string {
+      return app.getVersion()
+    },
+    get name(): string {
+      return app.getName()
+    },
+    get isPackaged(): boolean {
+      return isPackagedRuntime()
+    },
+    get appUpdateConfigPath(): string {
+      return isPackagedRuntime()
+        ? path.join(process.resourcesPath, 'app-update.yml')
+        : path.join(app.getAppPath(), 'dev-app-update.yml')
+    },
+    get userDataPath(): string {
+      return app.getPath('userData')
+    },
+    get baseCachePath(): string {
+      return getUpdateCacheRoot()
+    },
+    quit: (): void => app.quit(),
+    relaunch: (): void => app.relaunch(),
+    onQuit: (handler: (exitCode: number) => void): void => {
+      app.once('quit', (_event, exitCode) => handler(exitCode))
+    }
+  }
+  return new UnifiedDataNsisUpdater(null, adapter)
+}
+
+cleanupStagedUpdateInstallers()
+const applicationUpdater = createApplicationUpdater()
 
 export class AppUpdateService {
   private state: AppUpdateState = {
@@ -10,16 +100,16 @@ export class AppUpdateService {
   }
 
   constructor() {
-    autoUpdater.autoDownload = false
-    autoUpdater.autoInstallOnAppQuit = true
-    autoUpdater.on('checking-for-update', () => this.setState({ status: 'checking' }))
-    autoUpdater.on('update-available', (info) =>
+    applicationUpdater.autoDownload = false
+    applicationUpdater.autoInstallOnAppQuit = true
+    applicationUpdater.on('checking-for-update', () => this.setState({ status: 'checking' }))
+    applicationUpdater.on('update-available', (info) =>
       this.setState({ status: 'available', version: info.version, message: '发现新版本' })
     )
-    autoUpdater.on('update-not-available', () =>
+    applicationUpdater.on('update-not-available', () =>
       this.setState({ status: 'not-available', message: '当前已是最新版本' })
     )
-    autoUpdater.on('download-progress', (progress: ProgressInfo) =>
+    applicationUpdater.on('download-progress', (progress: ProgressInfo) =>
       this.setState({
         status: 'downloading',
         percent: progress.percent,
@@ -28,7 +118,7 @@ export class AppUpdateService {
         bytesPerSecond: progress.bytesPerSecond
       })
     )
-    autoUpdater.on('update-downloaded', (info) =>
+    applicationUpdater.on('update-downloaded', (info) =>
       this.setState({
         status: 'downloaded',
         version: info.version,
@@ -36,7 +126,7 @@ export class AppUpdateService {
         message: '更新已下载'
       })
     )
-    autoUpdater.on('error', (error) =>
+    applicationUpdater.on('error', (error) =>
       this.setState({ status: 'error', message: error.message || '更新失败' })
     )
   }
@@ -54,7 +144,7 @@ export class AppUpdateService {
       return { success: false, state }
     }
     try {
-      const result = await autoUpdater.checkForUpdates()
+      const result = await applicationUpdater.checkForUpdates()
       if (result?.updateInfo.version) {
         this.setState({
           status: 'available',
@@ -79,7 +169,7 @@ export class AppUpdateService {
     }
     try {
       this.setState({ status: 'downloading', percent: 0 })
-      await autoUpdater.downloadUpdate()
+      await applicationUpdater.downloadUpdate()
       return { success: true, state: this.getState() }
     } catch (error) {
       const state = this.setState({
@@ -94,7 +184,7 @@ export class AppUpdateService {
     if (this.state.status !== 'downloaded') {
       return { success: false, error: '更新包尚未下载完成' }
     }
-    autoUpdater.quitAndInstall()
+    applicationUpdater.quitAndInstall()
     return { success: true }
   }
 

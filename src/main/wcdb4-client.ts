@@ -40,6 +40,7 @@ export interface Wcdb4SessionQueryOptions {
 }
 
 export interface WindowsNativePathBridgeOptions {
+  dataRoot?: string
   platform?: NodeJS.Platform
   publicRoot?: string
 }
@@ -252,6 +253,9 @@ export function resolveWindowsNativeAccountRoot(
   const platform = options.platform || process.platform
   if (platform !== 'win32' || isAsciiPath(accountRoot)) return accountRoot
 
+  const dataRoot = String(options.dataRoot || process.env.WEMENTO_DATA_ROOT || '').trim()
+  const unifiedBridgeRoot =
+    dataRoot && isAsciiPath(dataRoot) ? path.join(dataRoot, 'path-bridges') : ''
   const publicRoot = [
     options.publicRoot,
     process.env.PUBLIC,
@@ -259,9 +263,9 @@ export function resolveWindowsNativeAccountRoot(
   ]
     .map((candidate) => String(candidate || '').trim())
     .find((candidate) => candidate && isAsciiPath(candidate))
-  if (!publicRoot || !isAsciiPath(publicRoot)) return accountRoot
+  if (!unifiedBridgeRoot && (!publicRoot || !isAsciiPath(publicRoot))) return accountRoot
 
-  const bridgeRoot = path.join(publicRoot, 'Wemento', 'path-bridges')
+  const bridgeRoot = unifiedBridgeRoot || path.join(publicRoot!, 'Wemento', 'path-bridges')
   const bridgePath = path.join(
     bridgeRoot,
     crypto

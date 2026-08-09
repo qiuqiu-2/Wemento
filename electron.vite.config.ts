@@ -7,7 +7,7 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: resolve('src/main/index.ts'),
+          index: resolve('src/main/bootstrap.ts'),
           voiceRecognitionWorker: resolve('src/main/voice-pipeline/voice-recognition-worker.ts'),
           knowledgeWorker: resolve('src/main/knowledge/knowledge-worker.ts')
         },

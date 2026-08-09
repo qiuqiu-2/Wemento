@@ -8,6 +8,7 @@ import { promisify } from 'util'
 import os from 'os'
 import crypto from 'crypto'
 import { getResourceRoots as getSharedResourceRoots } from './resource-paths'
+import { getApplicationTempRoot } from './data-paths'
 
 const execFileAsync = promisify(execFile)
 
@@ -120,7 +121,10 @@ export class KeyService {
 
   private localizeNetworkDll(originalPath: string): string {
     try {
-      const tempDir = join(os.tmpdir(), 'weflow_dll_cache')
+      const unifiedTempDir = join(getApplicationTempRoot(), 'weflow_dll_cache')
+      const tempDir = this.isNetworkPath(unifiedTempDir)
+        ? join(os.tmpdir(), 'weflow_dll_cache')
+        : unifiedTempDir
       if (!existsSync(tempDir)) {
         mkdirSync(tempDir, { recursive: true })
       }

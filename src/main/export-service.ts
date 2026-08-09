@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeImage, shell } from 'electron'
+import { BrowserWindow, nativeImage, shell } from 'electron'
 import { createHash } from 'crypto'
 import { createReadStream, createWriteStream, promises as fs } from 'fs'
 import { extname, join } from 'path'
@@ -23,6 +23,7 @@ import { getImageExportAttempts } from '../shared/export-media'
 import { FileAssetService } from './file-asset-service'
 import { mergeCachedSelfInfo } from './services/bootstrap-cache'
 import type { VoiceRecognitionUseCase } from './voice-pipeline/voice-recognition-use-case'
+import { getExportRoot } from './data-paths'
 
 const jobs = new Set<string>()
 const activeArchives = new Map<string, Archiver>()
@@ -756,7 +757,7 @@ export async function runExport(
       total: messages.length,
       percent: request.format === 'html' ? 18 : 20
     })
-    const root = join(app.getPath('documents'), 'Wemento', '导出')
+    const root = getExportRoot()
     await fs.mkdir(root, { recursive: true })
     const ext = request.format === 'markdown' ? 'md' : request.format
     const outputFolder =

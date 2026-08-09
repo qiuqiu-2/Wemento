@@ -8,13 +8,30 @@ const nodeRequire = createRequire(import.meta.url)
 const asar = nodeRequire('@electron/asar') as {
   createPackage: (source: string, destination: string) => Promise<void>
 }
+const yaml = nodeRequire('js-yaml') as {
+  load: (source: string) => Record<string, unknown>
+}
+const { getNodeModuleFileMatcher } = nodeRequire('app-builder-lib/out/fileMatcher') as {
+  getNodeModuleFileMatcher: (
+    appDir: string,
+    destination: string,
+    macroExpander: (value: string) => string,
+    platformSpecificBuildOptions: Record<string, unknown>,
+    packager: {
+      config: Record<string, unknown>
+      debugLogger: { isEnabled: boolean }
+    }
+  ) => { patterns: string[] }
+}
 const {
+  REQUIRED_RUNTIME_PACKAGES,
   validateAsarRuntimeDependencies,
   validateFfmpegRuntime,
   validateReaderSkillRuntime,
   validateSherpaRuntime,
   validateSilkWasmRuntime
 } = nodeRequire('../../scripts/after-pack.cjs') as {
+  REQUIRED_RUNTIME_PACKAGES: string[]
   validateAsarRuntimeDependencies: (runtimeResources: string) => void
   validateFfmpegRuntime: (runtimeResources: string, platform?: NodeJS.Platform) => void
   validateReaderSkillRuntime: (runtimeResources: string) => string
@@ -58,6 +75,50 @@ describe('production runtime packaging', () => {
     expect(config).toContain('node_modules/silk-wasm/**')
   })
 
+  it('does not apply app output filters to collected production dependencies', () => {
+    const projectRoot = resolve(__dirname, '../..')
+    const source = readFileSync(join(projectRoot, 'electron-builder.yml'), 'utf8')
+    const config = yaml.load(source) as { files?: unknown; win?: Record<string, unknown> }
+    const normalizedConfig = {
+      ...config,
+      files: [{ filter: config.files }]
+    }
+    const matcher = getNodeModuleFileMatcher(
+      projectRoot,
+      join(projectRoot, 'dist', 'app'),
+      (value) => value,
+      config.win ?? {},
+      { config: normalizedConfig, debugLogger: { isEnabled: false } }
+    )
+
+    expect(source).toContain('  - out')
+    expect(matcher.patterns).not.toContain('out')
+  })
+
+  it('publishes both the Windows installer and portable archive', () => {
+    const config = readFileSync(resolve(__dirname, '../../electron-builder.yml'), 'utf8')
+    expect(config).toContain('artifactName: ${name}-${version}-portable-${os}-${arch}.${ext}')
+    expect(config).toContain('- target: nsis')
+    expect(config).toContain('- target: zip')
+  })
+
+  it('loads the packaged renderer independently of main-process chunk placement', () => {
+    const mainSource = readFileSync(resolve(__dirname, '../../src/main/index.ts'), 'utf8')
+    expect(mainSource).toContain("join(app.getAppPath(), 'out/renderer/index.html')")
+    expect(mainSource).not.toContain("join(__dirname, '../renderer/index.html')")
+  })
+
+  it('uses legacy electron.exe packaged detection for the updater adapter', () => {
+    const updaterSource = readFileSync(
+      resolve(__dirname, '../../src/main/services/app-update-service.ts'),
+      'utf8'
+    )
+    expect(updaterSource).toContain('get isPackaged(): boolean')
+    expect(updaterSource).toContain('return isPackagedRuntime()')
+    expect(updaterSource).not.toContain('return app.isPackaged')
+    expect(updaterSource).not.toContain('app.isPackaged\n        ?')
+  })
+
   it('patches the legacy NSIS current-user install-directory lookup', () => {
     const projectPackage = JSON.parse(
       readFileSync(resolve(__dirname, '../../package.json'), 'utf8')
@@ -78,6 +139,17 @@ describe('production runtime packaging', () => {
     expect(multiUserTemplate).toContain('$LocalAppData\\Programs\\${APP_FILENAME}')
   })
 
+  it('keeps unified application data across installer upgrades and uninstall', () => {
+    const installerInclude = readFileSync(resolve(__dirname, '../../build/installer.nsh'), 'utf8')
+    expect(installerInclude).toContain('!macro customInstallMode')
+    expect(installerInclude).toContain('StrCpy $isForceCurrentInstall "1"')
+    expect(installerInclude).toContain('!macro customRemoveFiles')
+    expect(installerInclude).toContain('$INSTDIR.wemento-data-backup')
+    expect(installerInclude).toContain('Rename "$INSTDIR\\data" "$R8"')
+    expect(installerInclude).toContain('Rename "$R8" "$INSTDIR\\data"')
+    expect(installerInclude).toContain('"--delete-app-data"')
+  })
+
   it('rejects an app archive with missing runtime dependencies', async () => {
     const resources = join(root, 'asar-resources')
     const source = join(root, 'asar-source')
@@ -89,6 +161,20 @@ describe('production runtime packaging', () => {
     expect(() => validateAsarRuntimeDependencies(resources)).toThrow(
       /Missing packaged runtime dependencies:.*@electron-toolkit\/utils/
     )
+  })
+
+  it('accepts a complete runtime dependency archive on Windows', async () => {
+    const resources = join(root, 'complete-asar-resources')
+    const source = join(root, 'complete-asar-source')
+    for (const packageName of REQUIRED_RUNTIME_PACKAGES) {
+      const packagePath = join(source, 'node_modules', packageName)
+      mkdirSync(packagePath, { recursive: true })
+      writeFileSync(join(packagePath, 'package.json'), '{}')
+    }
+    mkdirSync(resources, { recursive: true })
+    await asar.createPackage(source, join(resources, 'app.asar'))
+
+    expect(() => validateAsarRuntimeDependencies(resources)).not.toThrow()
   })
 
   it('requires and unpacks the bundled ffmpeg-static executable', () => {

@@ -18,6 +18,7 @@ import {
 import * as chat from './chat-service'
 import { validateImageKeyRequest } from './image-key-config-service'
 import { isWechatRunning } from './wechat-process-status'
+import { getStickerCacheRoot } from '../data-paths'
 
 export async function inspectImageDecryptionStatus(
   config: ImageKeyConfigResult
@@ -28,6 +29,7 @@ export async function inspectImageDecryptionStatus(
   const imageDirectoryFound = hasImageDirectory(accountRoot)
   const stickerCacheFound =
     fs.existsSync(path.join(accountRoot, 'cache')) ||
+    fs.existsSync(getStickerCacheRoot()) ||
     fs.existsSync(path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis'))
   const dbConnected = chat.isReady()
   const [wechatRunning, decoder] = await Promise.all([

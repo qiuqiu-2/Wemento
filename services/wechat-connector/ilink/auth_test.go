@@ -7,6 +7,7 @@ import (
 )
 
 func TestSaveCredentialsKeepsOnlyLatestAccount(t *testing.T) {
+	t.Setenv(accountsDirEnv, "")
 	t.Setenv("HOME", t.TempDir())
 	old := &Credentials{ILinkBotID: "bot-old@im.bot", BotToken: "old-token"}
 	latest := &Credentials{ILinkBotID: "bot-new@im.bot", BotToken: "new-token"}
@@ -32,5 +33,17 @@ func TestSaveCredentialsKeepsOnlyLatestAccount(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, NormalizeAccountID(old.ILinkBotID)+".sync.json")); !os.IsNotExist(err) {
 		t.Fatalf("old sync state still exists: %v", err)
+	}
+}
+
+func TestAccountsDirHonorsWementoOverride(t *testing.T) {
+	configured := filepath.Join(t.TempDir(), "data", "connector", "accounts")
+	t.Setenv(accountsDirEnv, configured)
+	dir, err := AccountsDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dir != filepath.Clean(configured) {
+		t.Fatalf("AccountsDir() = %q, want %q", dir, filepath.Clean(configured))
 	}
 }

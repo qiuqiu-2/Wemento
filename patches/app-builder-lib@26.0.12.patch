@@ -1,3 +1,22 @@
+diff --git a/out/fileMatcher.js b/out/fileMatcher.js
+index ea2c790b033f6c1d6a6ec5cc99c7d09d42d82ff0..1b7f0220ef98226436f4d787f3d0e4c32ae18e02 100644
+--- a/out/fileMatcher.js
++++ b/out/fileMatcher.js
+@@ -200,7 +200,13 @@ function getNodeModuleFileMatcher(appDir, destination, macroExpander, platformSp
+                 const fileSet = pattern;
+                 if (fileSet.from == null || fileSet.from === ".") {
+                     for (const p of (0, builder_util_1.asArray)(fileSet.filter)) {
+-                        matcher.addPattern(p);
++                        // App file sets are normalized to object form before this
++                        // function runs. Only exclusions apply to production
++                        // dependencies; a positive app filter such as `out` would
++                        // otherwise exclude every collected package file.
++                        if (typeof p === "string" && p.startsWith("!")) {
++                            matcher.addPattern(p);
++                        }
+                     }
+                 }
+             }
 diff --git a/templates/nsis/multiUser.nsh b/templates/nsis/multiUser.nsh
 index 3de631bf0ce5095d03062ba98a68c5249904911e..4af01297971cccda147b0e88e86364e074d53921 100644
 --- a/templates/nsis/multiUser.nsh

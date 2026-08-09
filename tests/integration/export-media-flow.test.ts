@@ -754,7 +754,9 @@ describe('media export flow', () => {
       dirname(first.outputPath!),
       firstArchive.messages[0].exportMediaUrl as string
     )
-    expect(statSync(videoPath).mode & 0o777).toBe(0o644)
+    if (process.platform !== 'win32') {
+      expect(statSync(videoPath).mode & 0o777).toBe(0o644)
+    }
 
     chmodSync(videoPath, 0o444)
     const second = await runExport(
@@ -764,7 +766,9 @@ describe('media export flow', () => {
 
     expect(second.success, second.error).toBe(true)
     expect(second.outputPath).toBe(first.outputPath)
-    expect(statSync(videoPath).mode & 0o777).toBe(0o644)
+    if (process.platform !== 'win32') {
+      expect(statSync(videoPath).mode & 0o777).toBe(0o644)
+    }
   })
 
   it('merges two conversations in stable order without colliding identical message ids or media', async () => {
@@ -874,7 +878,7 @@ describe('media export flow', () => {
     expect(firstSize).toBeGreaterThan(0)
     expect(readFileSync(second.outputPath!).subarray(0, 2).toString()).toBe('PK')
     const entries = execFileSync('unzip', ['-Z1', second.outputPath!], { encoding: 'utf8' })
-    const htmlPath = join(state.documents, 'Wemento', '导出', 'zip-fixture', 'index.html')
+    const htmlPath = join(state.documents, 'exports', 'zip-fixture', 'index.html')
     const archive = readArchive(htmlPath)
     expect(entries).toContain('zip-fixture/index.html')
     expect(entries).toContain('zip-fixture/data/messages.js')
@@ -888,7 +892,7 @@ describe('media export flow', () => {
       true
     )
     expect(
-      readdirSync(join(state.documents, 'Wemento', '导出')).some((name) =>
+      readdirSync(join(state.documents, 'exports')).some((name) =>
         name.startsWith('zip-fixture.zip.tmp-')
       )
     ).toBe(false)
@@ -929,7 +933,7 @@ describe('media export flow', () => {
     expect(cancelled).toEqual({ success: false, error: '已取消' })
     expect(readFileSync(first.outputPath!)).toEqual(completeZip)
     expect(
-      readdirSync(join(state.documents, 'Wemento', '导出')).some((name) =>
+      readdirSync(join(state.documents, 'exports')).some((name) =>
         name.startsWith('zip-cancel-fixture.zip.tmp-')
       )
     ).toBe(false)

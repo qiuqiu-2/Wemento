@@ -9,6 +9,7 @@ import ffmpegStaticPath from 'ffmpeg-static'
 import type { ImageDecoderSource, ImageDecoderStatus } from '../shared/image-decryption'
 import { loadSettings } from './services/settings-store'
 import { Wcdb4Client } from './wcdb4-client'
+import { getApplicationTempRoot } from './data-paths'
 
 const imageDecryptDebugEnabled = process.env['WECHATEXPLORER_DEBUG_IMAGE'] === '1'
 const imageDecryptLog = (...args: unknown[]): void => {
@@ -333,7 +334,9 @@ function unwrapWxgf(buffer, ffmpegPath) {
   if (!hevcData || !ffmpegPath) return buffer
 
   const nonce = process.pid + '-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex')
-  const tempBase = path.join(os.tmpdir(), 'wxe-wxgf-' + nonce)
+  const tempDir = workerData.tempDir || os.tmpdir()
+  fs.mkdirSync(tempDir, { recursive: true })
+  const tempBase = path.join(tempDir, 'wxe-wxgf-' + nonce)
   const inputPath = tempBase + '.hevc'
   const outputPath = tempBase + '.png'
   try {
@@ -1507,7 +1510,8 @@ export class ImageDecryptService {
           allowThumbnail,
           xorKey: this.xorKey,
           aesKey: this.aesKey,
-          ffmpegPath: resolveFfmpegExecutable()
+          ffmpegPath: resolveFfmpegExecutable(),
+          tempDir: getApplicationTempRoot()
         }
       })
       const timeout = setTimeout(() => {

@@ -1,6 +1,5 @@
 import { app, BrowserWindow } from 'electron'
 import fs from 'fs-extra'
-import os from 'os'
 import path from 'path'
 import {
   GroupReportExportRequest,
@@ -11,6 +10,7 @@ import {
 } from '../shared/group-report'
 import { resolveMd5, getGroupSnapshot } from './services/chat-service'
 import { imageInsightService } from './services/image-insight-service'
+import { getGeneratedReportRoot } from './data-paths'
 
 const TEMPLATE_FILES: Record<string, string> = {
   v1: 'mobile_daily_report_v1.html',
@@ -29,7 +29,6 @@ const templatePath = (templateId?: string): string => {
   if (!found) throw new Error(`日报模板不存在: ${candidates.join(' | ')}`)
   return found
 }
-
 const escapeHtml = (value: unknown): string =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -585,7 +584,7 @@ export const exportGroupReport = async (
     // === enrich 在 render 之前:从群成员快照反推真头像 ===
     await enrichAvatarsFromGroup(request.metadata)
 
-    const outputDir = path.join(os.homedir(), 'Documents', '微信聊天记录')
+    const outputDir = getGeneratedReportRoot()
     await fs.ensureDir(outputDir)
     const templateLabel = request.templateId === 'v1' ? '经典版' : '模板2'
     const baseName = `${sanitizeFileName(request.metadata.groupName)}日报_${request.metadata.reportDate}_${templateLabel}`
