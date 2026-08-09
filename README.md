@@ -52,6 +52,12 @@
 > [!NOTE]
 > 微念（Wemento）是基于 [WechatExplorer](https://github.com/Wxw-Gu/WechatExplorer) 的个人维护分支与发行版，保留上游项目的核心能力，并维护 Wemento 专属的 Windows 构建、兼容性修复和发布。仓库的 `main` 分支用于同步上游，`personal` 是 Wemento 的稳定集成与发行分支。
 
+## 💬 交流与反馈
+
+<p align="center">
+  <img src="./public/二维码.jpg" alt="WechatExplorer 交流与售后群二维码" width="280" />
+</p>
+
 ## 从你的任务开始
 
 | 我现在想做什么                            | 在应用里打开                                            | 需要准备什么                         |
@@ -261,3 +267,34 @@ pnpm test:e2e:build
 ## 许可说明
 
 仓库中的第三方组件、模型和连接器遵循各自的许可证。Wemento 基于上游 WechatExplorer 维护；当前仓库根目录未提供独立的项目 `LICENSE` 文件，贡献、复制或再分发前，请先向上游及本仓库维护者确认适用的许可范围。
+
+## 致谢
+
+<details>
+  <summary>展开致谢与参考项目</summary>
+
+WechatExplorer 在开发过程中参考了多个优秀的开源项目，感谢这些项目作者的工作与分享。
+
+特别感谢：
+
+- **[WechatMessageExplorer](https://github.com/svcvit/WechatMessageExplorer)**
+  - 提供了微信数据库解析相关思路。
+- **[WeFlow](https://github.com/hicccc77/WeFlow)**
+  - 参考了数据库密钥获取、图片解密等实现思路。
+- **[chatlog](https://github.com/sjzar/chatlog)**
+  - 提供了聊天记录导出与数据处理方面的参考。
+
+在此基础上，WechatExplorer 进行了重新设计与实现，包括：
+
+- AI 问问微信
+- AI 群聊日报
+- 本地 HTTP API
+- Reader Skill
+- Agent Hub
+- 新手引导
+- Electron + React 全新界面
+- 本地优先 AI 工作流
+
+感谢所有开源作者。
+
+</details>
