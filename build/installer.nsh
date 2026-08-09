@@ -55,9 +55,15 @@
     ${EndIf}
 
     StrCpy $R5 "0"
-    ClearErrors
     RMDir /r "$INSTDIR"
-    ${If} ${Errors}
+    ; During an upgrade the copied uninstaller is launched with _?=$INSTDIR.
+    ; Windows can keep the now-empty directory itself busy even though every
+    ; replaceable application file was removed. NSIS wildcard checks also see
+    ; that working directory, so only core packaged files should block upgrade.
+    ; The directory itself is reused below when data is restored.
+    ${If} ${FileExists} "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+      StrCpy $R5 "1"
+    ${ElseIf} ${FileExists} "$INSTDIR\resources\app.asar"
       StrCpy $R5 "1"
     ${EndIf}
 
