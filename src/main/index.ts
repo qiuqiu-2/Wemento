@@ -401,7 +401,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     icon: appIconPath,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(app.getAppPath(), 'out/preload/index.js'),
       sandbox: false
     }
   })
@@ -430,11 +430,11 @@ app.whenReady().then(async () => {
   voiceRecognition = new VoiceRecognitionUseCase({
     modelRoot: join(app.getPath('userData'), 'models', 'sensevoice-small-int8'),
     databasePath: join(app.getPath('userData'), 'cache', 'voice-transcripts.sqlite'),
-    workerPath: join(__dirname, 'voiceRecognitionWorker.js')
+    workerPath: join(app.getAppPath(), 'out/main/voiceRecognitionWorker.js')
   })
   knowledgeSearchService = new KnowledgeSearchService(
     app.getPath('userData'),
-    join(__dirname, 'knowledgeWorker.js')
+    join(app.getAppPath(), 'out/main/knowledgeWorker.js')
   )
   knowledgeSearchService.setVoiceTranscriptResolver(
     (reference) => voiceRecognition?.getTranscriptSnapshot(reference) || { state: 'pending' }

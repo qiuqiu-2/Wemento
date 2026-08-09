@@ -102,10 +102,18 @@ describe('production runtime packaging', () => {
     expect(config).toContain('- target: zip')
   })
 
-  it('loads the packaged renderer independently of main-process chunk placement', () => {
+  it('loads packaged UI runtime files independently of main-process chunk placement', () => {
     const mainSource = readFileSync(resolve(__dirname, '../../src/main/index.ts'), 'utf8')
     expect(mainSource).toContain("join(app.getAppPath(), 'out/renderer/index.html')")
+    expect(mainSource).toContain("join(app.getAppPath(), 'out/preload/index.js')")
+    expect(mainSource).toContain(
+      "join(app.getAppPath(), 'out/main/voiceRecognitionWorker.js')"
+    )
+    expect(mainSource).toContain("join(app.getAppPath(), 'out/main/knowledgeWorker.js')")
     expect(mainSource).not.toContain("join(__dirname, '../renderer/index.html')")
+    expect(mainSource).not.toContain("join(__dirname, '../preload/index.js')")
+    expect(mainSource).not.toContain("join(__dirname, 'voiceRecognitionWorker.js')")
+    expect(mainSource).not.toContain("join(__dirname, 'knowledgeWorker.js')")
   })
 
   it('uses legacy electron.exe packaged detection for the updater adapter', () => {
