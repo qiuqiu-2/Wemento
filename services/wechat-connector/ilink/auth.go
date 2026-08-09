@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	accountsDirEnv  = "WEMENTO_CONNECTOR_ACCOUNTS_DIR"
 	qrCodeURL       = "https://ilinkai.weixin.qq.com/ilink/bot/get_bot_qrcode?bot_type=3"
 	qrStatusURL     = "https://ilinkai.weixin.qq.com/ilink/bot/get_qrcode_status?qrcode="
 	statusWait      = "wait"
@@ -80,6 +81,9 @@ func PollQRStatus(ctx context.Context, qrcode string, onStatus func(status strin
 
 // AccountsDir returns the directory where account credentials are stored.
 func AccountsDir() (string, error) {
+	if configured := strings.TrimSpace(os.Getenv(accountsDirEnv)); configured != "" {
+		return filepath.Clean(configured), nil
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err

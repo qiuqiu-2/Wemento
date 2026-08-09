@@ -88,7 +88,7 @@ function validateAsarRuntimeDependencies(runtimeResources) {
   const asarPath = path.join(runtimeResources, 'app.asar')
   if (!existsSync(asarPath)) throw new Error(`Missing packaged application archive: ${asarPath}`)
 
-  const entries = new Set(asar.listPackage(asarPath))
+  const entries = new Set(asar.listPackage(asarPath).map((entry) => entry.replace(/\\/g, '/')))
   const missingPackages = REQUIRED_RUNTIME_PACKAGES.filter(
     (packageName) => !entries.has(`/node_modules/${packageName}/package.json`)
   )
@@ -191,6 +191,7 @@ exports.default = async function afterPack(context) {
 
 exports.getRuntimeResources = getRuntimeResources
 exports.validateAsarRuntimeDependencies = validateAsarRuntimeDependencies
+exports.REQUIRED_RUNTIME_PACKAGES = REQUIRED_RUNTIME_PACKAGES
 exports.validateReaderSkillRuntime = validateReaderSkillRuntime
 exports.validateFfmpegRuntime = validateFfmpegRuntime
 exports.validateSilkWasmRuntime = validateSilkWasmRuntime

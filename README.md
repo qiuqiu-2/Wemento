@@ -177,20 +177,20 @@ flowchart LR
 
 | 平台    | 处理器架构                           | Releases 安装包                  |
 | ------- | ------------------------------------ | -------------------------------- |
-| Windows | x64                                  | `wemento-<版本>-setup.exe`       |
+| Windows | x64                                  | `wemento-<版本>-setup.exe` 或便携 ZIP |
 | macOS   | Intel（x64）、Apple Silicon（arm64） | `wemento-<版本>-<架构>.dmg`      |
 
 当前代码面向微信 4.x 数据结构。实际连接结果仍会受到微信客户端版本、账号数据状态和系统权限影响；macOS 首次连接可能需要按页面提示完成额外授权。
 
 ## 版本与发布
 
-当前版本为 **v2.1.10**，这是首个以“微念（Wemento）”名称发布的版本。本次发布包含：
+当前版本为 **v2.1.11**。本次发布包含：
 
-- 更新应用、安装器、仓库链接与下载入口的 Wemento 品牌信息；
-- 修复部分 Windows 环境下安装器或安装后的程序无法打开的问题；
-- 保留 `electron.exe` 兼容名称以满足微信数据库连接组件要求，同时避免安装器误杀其他 Electron 程序。
+- 将设置、密钥、缓存、模型、日志、导出、日报和连接器状态统一到程序目录下的 `data`；
+- 从 `%APPDATA%\WechatExplorer` 等旧位置安全复制已有数据，不覆盖新文件，也不自动删除旧副本；
+- 同时支持安装版、解压便携版和单文件 Portable EXE，并在升级或普通卸载时保留 `data`。
 
-正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.10 发布说明](./docs/release-notes-v2.1.10.md)。
+正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.11 发布说明](./docs/release-notes-v2.1.11.md)。
 
 ## 快速开始
 

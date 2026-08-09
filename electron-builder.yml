@@ -32,6 +32,14 @@ extraResources:
       - '**/*'
 win:
   icon: icon.ico
+  artifactName: ${name}-${version}-portable-${os}-${arch}.${ext}
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
   # WCDB's Windows runtime checks the host executable name. The dev runtime is
   # electron.exe, so keep the packaged executable compatible while preserving
   # Wemento as the product/shortcut name.

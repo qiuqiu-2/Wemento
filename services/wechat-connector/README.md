@@ -18,7 +18,7 @@ go run . accounts --json
 go run . start --foreground --api-addr 127.0.0.1:18011 --account-id <account-id>
 ```
 
-Credential and synchronization state is stored under `~/.wechatexplorer/wechat-connector/accounts`. A successful login is written before the older credential and synchronization state are removed, so an incomplete login cannot destroy the last working credential.
+When Wemento launches the connector, credential and synchronization state is stored under `data/connector/accounts` beside the installed application. A standalone connector still defaults to `~/.wechatexplorer/wechat-connector/accounts`; set `WEMENTO_CONNECTOR_ACCOUNTS_DIR` to override it. A successful login is written before the older credential and synchronization state are removed, so an incomplete login cannot destroy the last working credential.
 
 ## Attribution
 

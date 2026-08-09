@@ -6,6 +6,7 @@ import os from 'os'
 import path from 'path'
 import { Wcdb4Client } from './wcdb4-client'
 import { classifyStickerHttpFailure, StickerFailureCode } from '../shared/sticker'
+import { getStickerCacheRoot } from './data-paths'
 
 type StickerResult = {
   success: boolean
@@ -21,7 +22,7 @@ export class StickerService {
   private readonly cacheDir: string
 
   constructor(private readonly wcdb4Client?: Wcdb4Client | null) {
-    this.cacheDir = path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis')
+    this.cacheDir = getStickerCacheRoot()
   }
 
   async resolveSticker(cdnUrl?: string, md5?: string): Promise<StickerResult> {
@@ -67,10 +68,7 @@ export class StickerService {
 
   private async readCached(cacheKey: string): Promise<string | null> {
     const extensions = ['.gif', '.png', '.webp', '.jpg', '.jpeg']
-    const cacheDirs = [
-      this.cacheDir,
-      path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis')
-    ]
+    const cacheDirs = [this.cacheDir, path.join(os.homedir(), 'Documents', 'Wemento', 'Emojis')]
     for (const cacheDir of cacheDirs) {
       for (const ext of extensions) {
         const filePath = path.join(cacheDir, `${cacheKey}${ext}`)

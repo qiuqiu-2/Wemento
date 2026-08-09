@@ -268,17 +268,6 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
-// WCDB's Windows runtime checks the host application name during wcdb_init.
-// Mirroring WeFlow's name unblocks the -1006 init failure on Windows.
-app.setName(
-  process.platform === 'win32'
-    ? 'WeFlow'
-    : process.env['WXE_USER_DATA']
-      ? 'Wemento Dev'
-      : 'Wemento'
-)
-const isolatedUserData = process.env['WXE_USER_DATA']
-if (isolatedUserData) app.setPath('userData', isolatedUserData)
 let dbInitInFlight: Promise<{ success: boolean; monitoring?: boolean; error?: string }> | null =
   null
 let appShutdownRequested = false
@@ -431,7 +420,7 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(app.getAppPath(), 'out/renderer/index.html'))
   }
 }
 

@@ -116,4 +116,21 @@ describe('WCDB message shard pagination', () => {
     expect(first).not.toContain('微信聊天记录')
     expect(fs.realpathSync(first)).toBe(fs.realpathSync(accountRoot))
   })
+
+  it('keeps the native path bridge inside the unified data directory when it is ASCII', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wxe-unified-path-bridge-'))
+    temporaryDirectories.push(root)
+    const dataRoot = path.join(root, 'data')
+    const accountRoot = path.join(root, '微信聊天记录', 'wxid_fixture')
+    fs.ensureDirSync(path.join(accountRoot, 'db_storage'))
+
+    const bridged = resolveWindowsNativeAccountRoot(accountRoot, {
+      dataRoot,
+      platform: 'win32',
+      publicRoot: path.join(root, 'Public')
+    })
+
+    expect(bridged.startsWith(path.join(dataRoot, 'path-bridges'))).toBe(true)
+    expect(fs.realpathSync(bridged)).toBe(fs.realpathSync(accountRoot))
+  })
 })
