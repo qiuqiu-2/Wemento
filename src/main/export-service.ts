@@ -20,6 +20,7 @@ import { ImageKeyConfigService } from './services/image-key-config-service'
 import { VideoAssetService } from './video-asset-service'
 import { StickerService } from './sticker-service'
 import { getImageExportAttempts } from '../shared/export-media'
+import { imageFileQuality } from '../shared/image-quality'
 import { FileAssetService } from './file-asset-service'
 import { mergeCachedSelfInfo } from './services/bootstrap-cache'
 import type { VoiceRecognitionUseCase } from './voice-pipeline/voice-recognition-use-case'
@@ -251,6 +252,7 @@ const mergeArchiveMessage = (previous: Message, current: Message): Message => {
     'exportMediaUrl',
     'exportMediaType',
     'exportMediaName',
+    'exportMediaQuality',
     'exportAvatarUrl'
   ]
   for (const key of preserveWhenMissing) {
@@ -707,6 +709,7 @@ export async function runExport(
       message.exportMediaUrl = undefined
       message.exportMediaType = undefined
       message.exportMediaName = undefined
+      message.exportMediaQuality = undefined
       message.exportMediaError = undefined
       message.voiceDataUrl = undefined
       message.voiceTranscript = undefined
@@ -1064,15 +1067,20 @@ export async function runExport(
             : message.contentData.type === 'share' && message.contentData.typeVal === '6'
               ? 'file'
               : null
+        const reusableImageQuality =
+          previous?.exportMediaQuality === 'original' ||
+          (request.preferOriginal === false && previous?.exportMediaQuality === 'thumbnail')
         if (
           reusableMediaType &&
           previous?.exportMediaUrl &&
           (!previous.exportMediaType || previous.exportMediaType === reusableMediaType) &&
+          (reusableMediaType !== 'image' || reusableImageQuality) &&
           (await resourceExists(previous.exportMediaUrl))
         ) {
           message.exportMediaUrl = previous.exportMediaUrl
           message.exportMediaType = reusableMediaType
           message.exportMediaName = previous.exportMediaName
+          message.exportMediaQuality = previous.exportMediaQuality
           send({
             jobId: request.jobId,
             phase: 'media',
@@ -1088,7 +1096,6 @@ export async function runExport(
           } else {
             let fileFound = false
             let decryptedImage: { data: string; filePath: string } | null = null
-            let usedFallback = false
             for (const attempt of getImageExportAttempts(request)) {
               const file = await imageService.findImageFileAsync(
                 message.contentData.md5,
@@ -1117,7 +1124,6 @@ export async function runExport(
               }
               if (!decrypted) continue
               decryptedImage = decrypted
-              usedFallback = attempt.fallback || imageService.isThumbnailFile(decrypted.filePath)
               break
             }
             const decoded = decryptedImage ? decodeDataUrl(decryptedImage.data) : null
@@ -1130,7 +1136,8 @@ export async function runExport(
               }
               message.exportMediaUrl = mediaUrl
               message.exportMediaType = 'image'
-              if (usedFallback) {
+              message.exportMediaQuality = imageFileQuality(decryptedImage!.filePath)
+              if (request.preferOriginal !== false && message.exportMediaQuality === 'thumbnail') {
                 keepMediaError(request, message, '原图不可用，已降级使用缩略图')
               }
             } else if (!fileFound) {
@@ -1153,11 +1160,10 @@ export async function runExport(
           ].filter((value): value is string => Boolean(value))
           if (!videoService) {
             keepMediaError(request, message, '数据库未连接，无法定位本地视频')
-          } else if (hashes.length === 0) {
-            keepMediaError(request, message, '视频标识不完整，无法定位本地视频')
           } else {
             const resolved = await videoService.resolve(hashes, {
               createTime: message.createTime,
+              byteLength: message.contentData.byteLength,
               duration: message.contentData.duration,
               width: message.contentData.width,
               height: message.contentData.height
