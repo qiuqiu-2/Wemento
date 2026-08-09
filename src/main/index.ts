@@ -1328,7 +1328,13 @@ app.whenReady().then(async () => {
     async (
       _,
       hashes: string[],
-      options?: { createTime?: number; duration?: number; width?: number; height?: number }
+      options?: {
+        createTime?: number
+        byteLength?: number
+        duration?: number
+        width?: number
+        height?: number
+      }
     ) => {
       if (!videoAssetService) {
         const client = chat.getChatDb()?.getWcdb4Client()
