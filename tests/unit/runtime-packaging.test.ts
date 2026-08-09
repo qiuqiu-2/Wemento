@@ -147,6 +147,12 @@ describe('production runtime packaging', () => {
     expect(installerInclude).toContain('$INSTDIR.wemento-data-backup')
     expect(installerInclude).toContain('Rename "$INSTDIR\\data" "$R8"')
     expect(installerInclude).toContain('Rename "$R8" "$INSTDIR\\data"')
+    expect(installerInclude).toContain(
+      '${If} ${FileExists} "$INSTDIR\\${APP_EXECUTABLE_FILENAME}"'
+    )
+    expect(installerInclude).toContain(
+      '${ElseIf} ${FileExists} "$INSTDIR\\resources\\app.asar"'
+    )
     expect(installerInclude).toContain('"--delete-app-data"')
   })
 
