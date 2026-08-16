@@ -130,6 +130,27 @@ function safeAppPath(application: App, name: Parameters<App['getPath']>[0]): str
   }
 }
 
+function safeAppName(application: App): string {
+  try {
+    return application.getName()
+  } catch {
+    return ''
+  }
+}
+
+function joinForPlatform(platform: NodeJS.Platform, ...segments: string[]): string {
+  return platform === 'win32' ? path.win32.join(...segments) : path.join(...segments)
+}
+
+function legacyDefaultUserDataPath(
+  application: App,
+  appDataPath: string,
+  platform: NodeJS.Platform
+): string {
+  const applicationName = safeAppName(application) || 'Wemento'
+  return appDataPath ? joinForPlatform(platform, appDataPath, applicationName) : ''
+}
+
 function uniquePaths(values: string[], platform: NodeJS.Platform): string[] {
   const seen = new Set<string>()
   const result: string[] = []
@@ -323,15 +344,35 @@ export function configureApplicationDataPaths(
   const execPath = options.execPath || process.execPath
   const resourcesPath = options.resourcesPath || process.resourcesPath || ''
   const homePath = options.homePath || os.homedir()
-  const previousUserData = safeAppPath(application, 'userData')
-  const documentsPath = safeAppPath(application, 'documents')
-  const resolution = resolveApplicationDataRoot({
-    defaultUserData: previousUserData,
+  const packaged = isPackagedApplication(application.isPackaged, resourcesPath)
+
+  // Reading Electron's default userData path creates that directory on Windows.
+  // First resolve every mode that has an independent root, and only ask Electron
+  // for its default in standard development mode where that path is actually used.
+  let resolution = resolveApplicationDataRoot({
+    defaultUserData: '',
     env,
     execPath,
-    isPackaged: isPackagedApplication(application.isPackaged, resourcesPath),
+    isPackaged: packaged,
     platform
   })
+  let previousUserData = ''
+  let appDataPath = ''
+  let documentsPath = ''
+  if (resolution.mode === 'standard') {
+    previousUserData = safeAppPath(application, 'userData')
+    resolution = resolveApplicationDataRoot({
+      defaultUserData: previousUserData,
+      env,
+      execPath,
+      isPackaged: packaged,
+      platform
+    })
+  } else if (resolution.mode === 'installed') {
+    appDataPath = String(env.APPDATA || '').trim() || safeAppPath(application, 'appData')
+    previousUserData = legacyDefaultUserDataPath(application, appDataPath, platform)
+    documentsPath = safeAppPath(application, 'documents')
+  }
   const layout = buildApplicationDataLayout(resolution.root)
 
   ensureWritableDirectory(layout.root)
@@ -348,23 +389,6 @@ export function configureApplicationDataPaths(
     mkdirSync(directory, { recursive: true })
   }
 
-  const migration =
-    resolution.mode === 'installed'
-      ? migrateLegacyApplicationData({
-          layout,
-          platform,
-          sources: buildLegacyMigrationSources({
-            appDataPath: env.APPDATA,
-            defaultUserData: previousUserData,
-            documentsPath,
-            homePath,
-            layout,
-            localAppDataPath: env.LOCALAPPDATA,
-            platform
-          })
-        })
-      : { copiedFiles: 0, failures: [], skipped: true }
-
   application.setName(
     platform === 'win32' ? 'WeFlow' : env['WXE_USER_DATA'] ? 'Wemento Dev' : 'Wemento'
   )
@@ -378,6 +402,23 @@ export function configureApplicationDataPaths(
   env[APPLICATION_DATA_ROOT_ENV] = layout.root
   env[CONNECTOR_ACCOUNTS_DIR_ENV] = layout.connectorAccounts
   env['WE_SETTINGS_DIR'] = layout.root
+
+  const migration =
+    resolution.mode === 'installed'
+      ? migrateLegacyApplicationData({
+          layout,
+          platform,
+          sources: buildLegacyMigrationSources({
+            appDataPath,
+            defaultUserData: previousUserData,
+            documentsPath,
+            homePath,
+            layout,
+            localAppDataPath: env.LOCALAPPDATA,
+            platform
+          })
+        })
+      : { copiedFiles: 0, failures: [], skipped: true }
 
   return { layout, migration, mode: resolution.mode, previousUserData }
 }

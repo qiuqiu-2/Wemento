@@ -190,7 +190,6 @@ const IMAGE_DECRYPT_WORKER_SOURCE = String.raw`
 const crypto = require('node:crypto')
 const childProcess = require('node:child_process')
 const fs = require('node:fs')
-const os = require('node:os')
 const path = require('node:path')
 const { parentPort, workerData } = require('node:worker_threads')
 
@@ -335,7 +334,8 @@ function unwrapWxgf(buffer, ffmpegPath) {
   if (!hevcData || !ffmpegPath) return buffer
 
   const nonce = process.pid + '-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex')
-  const tempDir = workerData.tempDir || os.tmpdir()
+  const tempDir = String(workerData.tempDir || '').trim()
+  if (!tempDir) return buffer
   fs.mkdirSync(tempDir, { recursive: true })
   const tempBase = path.join(tempDir, 'wxe-wxgf-' + nonce)
   const inputPath = tempBase + '.hevc'
