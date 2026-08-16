@@ -127,6 +127,16 @@ describe('production runtime packaging', () => {
     expect(updaterSource).not.toContain('app.isPackaged\n        ?')
   })
 
+  it('keeps image decoder temporary files inside the unified data directory', () => {
+    const imageDecryptSource = readFileSync(
+      resolve(__dirname, '../../src/main/image-decrypt-service.ts'),
+      'utf8'
+    )
+    expect(imageDecryptSource).toContain('tempDir: getApplicationTempRoot()')
+    expect(imageDecryptSource).not.toContain("const os = require('node:os')")
+    expect(imageDecryptSource).not.toContain('workerData.tempDir || os.tmpdir()')
+  })
+
   it('patches the legacy NSIS current-user install-directory lookup', () => {
     const projectPackage = JSON.parse(
       readFileSync(resolve(__dirname, '../../package.json'), 'utf8')

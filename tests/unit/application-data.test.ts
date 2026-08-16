@@ -124,16 +124,16 @@ describe('unified application data directory', () => {
   it('sets every Electron-owned writable path before application modules load', () => {
     const root = temporaryRoot('wemento-configured-data-')
     const env: NodeJS.ProcessEnv = { [APPLICATION_DATA_ROOT_ENV]: root }
-    const currentPaths = new Map<string, string>([
-      ['userData', temporaryRoot('wemento-previous-data-')],
-      ['documents', temporaryRoot('wemento-documents-')]
-    ])
+    const currentPaths = new Map<string, string>()
     const setPath = vi.fn((name: string, value: string) => currentPaths.set(name, value))
     const setName = vi.fn()
     const setAppLogsPath = vi.fn()
+    const getPath = vi.fn(() => {
+      throw new Error('isolated mode must not query an Electron default path')
+    })
     const application = {
       isPackaged: false,
-      getPath: (name: string) => currentPaths.get(name) || '',
+      getPath,
       setPath,
       setName,
       setAppLogsPath
@@ -155,5 +155,58 @@ describe('unified application data directory', () => {
     expect(setAppLogsPath).toHaveBeenCalledWith(join(path.resolve(root), 'logs'))
     expect(env[CONNECTOR_ACCOUNTS_DIR_ENV]).toBe(join(path.resolve(root), 'connector', 'accounts'))
     expect(env.WE_SETTINGS_DIR).toBe(path.resolve(root))
+    expect(getPath).not.toHaveBeenCalled()
+  })
+
+  it('does not create or query the default userData directory for packaged Windows apps', () => {
+    const fixture = temporaryRoot('wemento-packaged-data-')
+    const installRoot = join(fixture, 'Wemento')
+    const appDataRoot = join(fixture, 'Roaming')
+    const documentsRoot = join(fixture, 'Documents')
+    const legacyUserData = join(appDataRoot, 'Wemento')
+    mkdirSync(installRoot, { recursive: true })
+    mkdirSync(legacyUserData, { recursive: true })
+    mkdirSync(documentsRoot, { recursive: true })
+    writeFileSync(join(legacyUserData, 'settings.json'), 'legacy')
+
+    const getPath = vi.fn((name: string) => {
+      if (name === 'userData') {
+        throw new Error('getPath(userData) would create an unwanted AppData directory')
+      }
+      if (name === 'documents') return documentsRoot
+      if (name === 'appData') return appDataRoot
+      return ''
+    })
+    const unifiedRoot = join(installRoot, 'data')
+    const setPath = vi.fn((name: string, value: string) => {
+      expect(existsSync(value)).toBe(true)
+      if (name === 'userData') {
+        expect(existsSync(join(unifiedRoot, 'settings.json'))).toBe(false)
+      }
+    })
+    const application = {
+      isPackaged: true,
+      getName: () => 'Wemento',
+      getPath,
+      setPath,
+      setName: vi.fn(),
+      setAppLogsPath: vi.fn()
+    } as unknown as App
+
+    const configured = configureApplicationDataPaths({
+      app: application,
+      env: { APPDATA: appDataRoot },
+      execPath: join(installRoot, 'Wemento.exe'),
+      homePath: fixture,
+      platform: 'win32',
+      resourcesPath: ''
+    })
+
+    expect(configured.mode).toBe('installed')
+    expect(configured.layout.root).toBe(path.win32.join(installRoot, 'data'))
+    expect(configured.previousUserData).toBe(path.win32.join(appDataRoot, 'Wemento'))
+    expect(readFileSync(join(configured.layout.root, 'settings.json'), 'utf8')).toBe('legacy')
+    expect(getPath).not.toHaveBeenCalledWith('userData')
+    expect(setPath).toHaveBeenCalledWith('userData', configured.layout.root)
   })
 })
