@@ -1,15 +1,23 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import { Contact, Message } from '../shared/types'
-import { GroupReportExportRequest, GroupReportExportResult } from '../shared/group-report'
+import {
+  GroupReportExportRequest,
+  GroupReportExportResult,
+  GroupReportRenderSnapshotExportRequest
+} from '../shared/group-report'
 import { LocalApiTestRequest, LocalApiTestResponse } from '../shared/local-api-test'
 import {
   DeleteGeneratedReportResult,
   ReportHistoryResult,
   SaveGeneratedReportRequest,
-  SaveGeneratedReportResult
+  SaveGeneratedReportResult,
+  PrepareGeneratedReportTemplateSwitchResult,
+  UpdateGeneratedReportTemplateRequest,
+  UpdateGeneratedReportTemplateResult
 } from '../shared/report-history'
 import type {
   DatabaseKeyEnvironment,
+  DatabaseInitResult,
   DatabaseKeyStorageResult,
   DatabaseKeyValidationResult,
   AccountDiscoveryResult
@@ -32,6 +40,7 @@ import type {
   AIProviderConfig,
   AIProviderListResult,
   AIRuntimeModelConfig,
+  AIVisionRuntimeConfig,
   AIVisionTestRequest,
   AIVisionTestResult,
   LegacyAIConfig
@@ -57,7 +66,8 @@ import type {
   VoiceModelDownloadResult,
   VoiceModelProgressEvent,
   VoiceModelStatus,
-  VoiceRecognitionResult
+  VoiceRecognitionResult,
+  VoiceTranscriptSnapshot
 } from '../shared/voice-recognition'
 import type {
   AiSearchCancelResult,
@@ -70,6 +80,12 @@ import type {
   KnowledgeSearchIpcRequest,
   KnowledgeSearchIpcResult
 } from '../shared/knowledge'
+import type {
+  PublishWechatShareCardRequest,
+  PublishWechatShareCardResult,
+  WechatShareServiceConfig,
+  WechatShareServiceConfigResult
+} from '../shared/wechat-share-card'
 
 export type ParsedContent =
   | { type: 'text'; content: string }
@@ -141,10 +157,8 @@ declare global {
       onAppUpdateState: (callback: (state: AppUpdateState) => void) => () => void
       getCacheSummary: () => Promise<CacheSummary>
       clearCache: (scope: 'bootstrap' | 'electron' | 'knowledge' | 'all') => Promise<CacheSummary>
-      initDb: (
-        key: string,
-        accountRoot: string
-      ) => Promise<boolean | { success: boolean; error?: string; monitoring?: boolean }>
+      openKnowledgeDirectory: () => Promise<{ success: boolean; error?: string }>
+      initDb: (key: string, accountRoot: string) => Promise<boolean | DatabaseInitResult>
       discoverAccounts: (inputPath: string) => Promise<AccountDiscoveryResult>
       getBootstrapCache: () => Promise<{
         self?: { wxid: string; nickname: string; avatar?: string; accountRoot: string }
@@ -225,6 +239,7 @@ declare global {
       }>
       listAIProviders: () => Promise<AIProviderListResult>
       getAIRuntimeConfig: () => Promise<AIRuntimeModelConfig>
+      getAIVisionRuntimeConfig: () => Promise<AIVisionRuntimeConfig>
       getAiSearchProviderStatus: () => Promise<AiSearchProviderStatus>
       authorizeAiSearchExternalProvider: (
         request: AiSearchExternalAuthorizationRequest
@@ -248,6 +263,9 @@ declare global {
       removeVoiceModel: () => Promise<VoiceModelStatus>
       openVoiceModelDirectory: () => Promise<{ success: boolean; error?: string }>
       recognizeVoice: (reference: VoiceMessageReference) => Promise<VoiceRecognitionResult>
+      getVoiceTranscriptSnapshot: (
+        reference: VoiceMessageReference
+      ) => Promise<VoiceTranscriptSnapshot>
       cancelVoiceRecognition: (reference: VoiceMessageReference) => Promise<{ success: boolean }>
       getVoiceBatchPreflight: (request: VoiceBatchRequest) => Promise<VoiceBatchPreflight>
       getVoiceBatchConversationSummaries: (
@@ -298,16 +316,33 @@ declare global {
         httpStatus?: number
       }>
       startExport: (request: ExportRequest) => Promise<ExportResult>
+      selectExportDirectory: () => Promise<{ canceled: boolean; path?: string }>
       cancelExport: (jobId: string) => Promise<{ success: boolean }>
       revealExport: (path: string) => Promise<{ success: boolean; error?: string }>
       onExportProgress: (callback: (progress: ExportJobProgress) => void) => () => void
       exportGroupReport: (request: GroupReportExportRequest) => Promise<GroupReportExportResult>
+      exportGroupReportSnapshot: (
+        request: GroupReportRenderSnapshotExportRequest
+      ) => Promise<GroupReportExportResult>
+      prepareGeneratedReportTemplateSwitch: (
+        reportId: string
+      ) => Promise<PrepareGeneratedReportTemplateSwitchResult>
       listGeneratedReports: () => Promise<ReportHistoryResult>
       saveGeneratedReport: (
         request: SaveGeneratedReportRequest
       ) => Promise<SaveGeneratedReportResult>
+      updateGeneratedReportTemplate: (
+        request: UpdateGeneratedReportTemplateRequest
+      ) => Promise<UpdateGeneratedReportTemplateResult>
       deleteGeneratedReport: (reportId: string) => Promise<DeleteGeneratedReportResult>
       revealGroupReport: (filePath: string) => Promise<{ success: boolean; error?: string }>
+      getWechatShareConfig: () => Promise<WechatShareServiceConfigResult>
+      saveWechatShareConfig: (
+        config: WechatShareServiceConfig
+      ) => Promise<WechatShareServiceConfigResult>
+      publishWechatShareCard: (
+        request: PublishWechatShareCardRequest
+      ) => Promise<PublishWechatShareCardResult>
       getSavedDbKey: (accountRoot: string) => Promise<DatabaseKeyStorageResult>
       getDatabaseKeyEnvironment: () => Promise<DatabaseKeyEnvironment>
       readDatabaseKeyClipboard: () => Promise<{

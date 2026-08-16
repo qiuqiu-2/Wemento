@@ -18,6 +18,10 @@ export function SkillDetails({
       <dl>
         <div>
           <dt>名称</dt>
+          <dd>Wemento Reader</dd>
+        </div>
+        <div>
+          <dt>标识</dt>
           <dd>wechatexplorer-reader</dd>
         </div>
         <div>

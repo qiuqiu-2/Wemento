@@ -15,7 +15,16 @@ function fixtureRoot(): string {
   return root
 }
 
-function environment(root: string, packaged: boolean) {
+function environment(
+  root: string,
+  packaged: boolean
+): {
+  appPath: string
+  cwd: string
+  resourcesPath: string
+  execPath: string
+  packaged: boolean
+} {
   return {
     appPath: join(root, 'application'),
     cwd: join(root, 'workspace'),
@@ -44,7 +53,7 @@ describe('Reader Skill resource resolution', () => {
     expect(resolveSkillResourceStatus(runtime)).toMatchObject({
       available: true,
       source: 'development',
-      version: 'v1.1',
+      version: 'v1.2',
       filePath: skillPath,
       directoryPath: dirname(skillPath)
     })
@@ -63,7 +72,7 @@ describe('Reader Skill resource resolution', () => {
     expect(status).toMatchObject({
       available: true,
       source: 'development',
-      version: 'v1.1',
+      version: 'v1.2',
       filePath: join(workspace, 'docs', 'skill', 'wechatexplorer-reader', 'SKILL.md')
     })
   })

@@ -44,6 +44,7 @@ for (const [target, expected] of [
   })
   assert.match(text, new RegExp(expected))
   assert.match(text, /http:\/\/127\.0\.0\.1:6131\/api\/v1\/health/)
+  assert.match(text, /WEMENTO_API_TOKEN/)
   assert.match(text, /WECHATEXPLORER_API_TOKEN/)
   assert.match(text, /Authorization: Bearer/)
   assert.doesNotMatch(text, /mcpServers/)

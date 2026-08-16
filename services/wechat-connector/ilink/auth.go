@@ -79,16 +79,44 @@ func PollQRStatus(ctx context.Context, qrcode string, onStatus func(status strin
 	}
 }
 
-// AccountsDir returns the directory where account credentials are stored.
-func AccountsDir() (string, error) {
-	if configured := strings.TrimSpace(os.Getenv(accountsDirEnv)); configured != "" {
-		return filepath.Clean(configured), nil
-	}
+func accountsDir(rootName string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, ".wechatexplorer", "wechat-connector", "accounts"), nil
+	return filepath.Join(home, rootName, "wechat-connector", "accounts"), nil
+}
+
+// AccountsDir returns Wemento's configured credential directory. Standalone
+// connector runs use a Wemento-specific home directory.
+func AccountsDir() (string, error) {
+	if configured := strings.TrimSpace(os.Getenv(accountsDirEnv)); configured != "" {
+		return filepath.Clean(configured), nil
+	}
+	return accountsDir(".wemento")
+}
+
+// LegacyAccountsDir is read-only compatibility for v2.1.9 and earlier.
+func LegacyAccountsDir() (string, error) {
+	return accountsDir(".wechatexplorer")
+}
+
+func accountDirectoryForID(accountID string) (string, error) {
+	current, err := AccountsDir()
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(filepath.Join(current, accountID+".json")); err == nil {
+		return current, nil
+	}
+	legacy, err := LegacyAccountsDir()
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(filepath.Join(legacy, accountID+".json")); err == nil {
+		return legacy, nil
+	}
+	return current, nil
 }
 
 // NormalizeAccountID converts raw bot ID to filesystem-safe format.
@@ -163,13 +191,7 @@ func SaveCredentials(creds *Credentials) error {
 	return nil
 }
 
-// LoadAllCredentials loads all saved account credentials.
-func LoadAllCredentials() ([]*Credentials, error) {
-	dir, err := AccountsDir()
-	if err != nil {
-		return nil, err
-	}
-
+func loadCredentialsFromDir(dir string) ([]*Credentials, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -193,6 +215,24 @@ func LoadAllCredentials() ([]*Credentials, error) {
 		}
 	}
 	return result, nil
+}
+
+// LoadAllCredentials loads Wemento credentials first and falls back to the
+// untouched WechatExplorer directory for one-version upgrade compatibility.
+func LoadAllCredentials() ([]*Credentials, error) {
+	current, err := AccountsDir()
+	if err != nil {
+		return nil, err
+	}
+	credentials, err := loadCredentialsFromDir(current)
+	if err != nil || len(credentials) > 0 {
+		return credentials, err
+	}
+	legacy, err := LegacyAccountsDir()
+	if err != nil {
+		return nil, err
+	}
+	return loadCredentialsFromDir(legacy)
 }
 
 // CredentialsPath returns the path for display purposes.

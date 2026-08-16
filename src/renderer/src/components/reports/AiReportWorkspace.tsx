@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Contact } from '../../../../shared/types'
+import type { ReportModelChoice } from '../../../../shared/ai-provider'
 import {
   AiModelConfig,
   RangeMessageState,
@@ -13,14 +14,18 @@ import { ModelSummary } from './ModelSummary'
 import { ReportDensitySelector } from './ReportDensitySelector'
 import { ReportRangeSelector } from './ReportRangeSelector'
 import { ReportMemberNameSelector } from './ReportMemberNameSelector'
+import { ReportGroupMemberSelector } from './ReportGroupMemberSelector'
 import { ReportSectionSelector } from './ReportSectionSelector'
-import { ReportTemplateId, ReportTemplateSelector } from './ReportTemplateSelector'
+import { ReportTemplateSelector, SelectableReportTemplateId } from './ReportTemplateSelector'
 
 interface AiReportWorkspaceProps {
   sourceContact: Contact | null
   summaryDateRange: SummaryDateRange
   summaryMessageTypes: SummaryMessageType[]
   modelConfig: AiModelConfig
+  visionModelConfig?: ReportModelChoice
+  textModelOptions: ReportModelChoice[]
+  visionModelOptions: ReportModelChoice[]
   rangeMessageCount: number
   reportMessageCount: number
   messageTypeCounts: Record<SummaryMessageType, number>
@@ -33,14 +38,16 @@ interface AiReportWorkspaceProps {
   onSummaryDateRangeChange: (value: SummaryDateRange) => void
   onSummaryMessageTypesChange: (value: SummaryMessageType[]) => void
   onOpenModelSettings: () => void
+  onTextModelChange: (model: ReportModelChoice) => void
+  onVisionModelChange: (model: ReportModelChoice) => void
   onGenerate: () => void
   onCloseResult: () => void
   onCopyImage: () => Promise<{ success: boolean; error?: string }>
   onRevealReport: () => Promise<{ success: boolean; error?: string }>
   onViewResult: () => void
   hasReportResult: boolean
-  templateId: ReportTemplateId
-  onTemplateIdChange: (value: ReportTemplateId) => void
+  templateId: SelectableReportTemplateId
+  onTemplateIdChange: (value: SelectableReportTemplateId) => void
   memberNamePreference: ReportMemberNamePreference
   onMemberNamePreferenceChange: (value: ReportMemberNamePreference) => void
   reportTimeoutSeconds: number
@@ -68,6 +75,9 @@ export function AiReportWorkspace({
   summaryDateRange,
   summaryMessageTypes,
   modelConfig,
+  visionModelConfig,
+  textModelOptions,
+  visionModelOptions,
   rangeMessageCount,
   reportMessageCount,
   messageTypeCounts,
@@ -80,6 +90,8 @@ export function AiReportWorkspace({
   onSummaryDateRangeChange,
   onSummaryMessageTypesChange,
   onOpenModelSettings,
+  onTextModelChange,
+  onVisionModelChange,
   onGenerate,
   onCloseResult,
   onCopyImage,
@@ -169,7 +181,17 @@ export function AiReportWorkspace({
           onChange={onMemberNamePreferenceChange}
           disabled={configDisabled}
         />
-        <ModelSummary config={modelConfig} onOpenSettings={onOpenModelSettings} />
+        <ReportGroupMemberSelector sourceContact={sourceContact} disabled={configDisabled} />
+        <ModelSummary
+          config={modelConfig}
+          visionConfig={visionModelConfig}
+          textModels={textModelOptions}
+          visionModels={visionModelOptions}
+          disabled={configDisabled}
+          onTextModelChange={onTextModelChange}
+          onVisionModelChange={onVisionModelChange}
+          onOpenSettings={onOpenModelSettings}
+        />
         <section className="report-config-section report-timeout-section">
           <div>
             <h3>日报生成超时</h3>

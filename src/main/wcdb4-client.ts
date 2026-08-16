@@ -59,6 +59,17 @@ export interface Wcdb4GroupMember {
   m_nsHeadImgUrl: string
 }
 
+/**
+ * 联系人表中独立保存的成员名称字段。
+ *
+ * 群成员接口的 nickname 在部分微信数据版本中会被通讯录备注覆盖，因此不能用它
+ * 推断微信昵称或备注。
+ */
+type Wcdb4ContactMemberNames = {
+  wechatNickname: string
+  remark: string
+}
+
 export interface Wcdb4ImageHardlink {
   file_name?: string
   full_path?: string
@@ -240,6 +251,20 @@ type KoffiAsyncFunction = ((...args: unknown[]) => unknown) & {
 type WcdbVoidOut = [unknown]
 type WcdbHandleOut = [number]
 
+export interface Wcdb4VoiceDataRequest {
+  sessionId: string
+  createTime: number
+  candidates: string[]
+  localId?: number
+  svrId?: string | number
+}
+
+export interface Wcdb4VoiceDataResult {
+  success: boolean
+  hex?: string
+  error: string
+}
+
 const nodeRequire = createRequire(import.meta.url)
 
 function isAsciiPath(value: string): boolean {
@@ -265,20 +290,40 @@ export function resolveWindowsNativeAccountRoot(
     .find((candidate) => candidate && isAsciiPath(candidate))
   if (!unifiedBridgeRoot && (!publicRoot || !isAsciiPath(publicRoot))) return accountRoot
 
+  const bridgeId = crypto
+    .createHash('sha256')
+    .update(path.resolve(accountRoot).toLowerCase())
+    .digest('hex')
+    .slice(0, 24)
+  if (!unifiedBridgeRoot && publicRoot) {
+    const legacyBridgePath = path.join(publicRoot, 'WechatExplorer', 'path-bridges', bridgeId)
+    try {
+      if (fs.existsSync(legacyBridgePath)) {
+        const legacyTarget = fs.realpathSync.native(legacyBridgePath)
+        const canonicalAccountRoot = fs.realpathSync.native(accountRoot)
+        if (
+          path.resolve(legacyTarget).toLowerCase() ===
+          path.resolve(canonicalAccountRoot).toLowerCase()
+        ) {
+          return legacyBridgePath
+        }
+      }
+    } catch {
+      // Leave unreadable legacy junctions untouched and create a Wemento bridge below.
+    }
+  }
+
   const bridgeRoot = unifiedBridgeRoot || path.join(publicRoot!, 'Wemento', 'path-bridges')
-  const bridgePath = path.join(
-    bridgeRoot,
-    crypto
-      .createHash('sha256')
-      .update(path.resolve(accountRoot).toLowerCase())
-      .digest('hex')
-      .slice(0, 24)
-  )
+  const bridgePath = path.join(bridgeRoot, bridgeId)
   try {
     fs.ensureDirSync(bridgeRoot)
     if (fs.existsSync(bridgePath)) {
       const existingTarget = fs.realpathSync.native(bridgePath)
-      if (path.resolve(existingTarget).toLowerCase() === path.resolve(accountRoot).toLowerCase()) {
+      const canonicalAccountRoot = fs.realpathSync.native(accountRoot)
+      if (
+        path.resolve(existingTarget).toLowerCase() ===
+        path.resolve(canonicalAccountRoot).toLowerCase()
+      ) {
         return bridgePath
       }
       fs.removeSync(bridgePath)
@@ -384,6 +429,7 @@ export class Wcdb4Client {
         outHex: WcdbVoidOut
       ) => number)
     | null = null
+  private wcdbGetVoiceDataBatch: KoffiAsyncFunction | null = null
   private wcdbResolveImageHardlink:
     | ((handle: number, md5: string, accountDir: string, outJson: WcdbVoidOut) => number)
     | null = null
@@ -1688,70 +1734,16 @@ export class Wcdb4Client {
       const rows = this.callJson<Record<string, unknown>[]>((handle, outJson) =>
         this.wcdbGetGroupMembers!(handle, chatroomId, outJson)
       )
-
-      const members = (Array.isArray(rows) ? rows : []).map((row) => {
-        const username = this.pickString(row, [
-          'username',
-          'userName',
-          'user_name',
-          'member_username',
-          'm_nsUsrName'
-        ])
-        const wechatNickname = this.pickString(row, [
-          'nickname',
-          'nickName',
-          'wechatNickname',
-          'wechat_nickname',
-          'm_nsNickName'
-        ])
-        const remark = this.pickString(row, [
-          'remark',
-          'remarkName',
-          'remark_name',
-          'contactRemark',
-          'contact_remark'
-        ])
-        const memberNickname = this.pickString(row, ['displayName', 'display_name', 'name'])
-        const avatar = this.pickString(row, [
-          'avatarUrl',
-          'avatar_url',
-          'headImgUrl',
-          'm_nsHeadImgUrl'
-        ])
-
-        if (username) {
-          if (avatar) this.avatarCache.set(username, avatar)
-        }
-
-        return {
-          m_nsUsrName: username,
-          nickname: groupNicknames.get(username) || remark || wechatNickname || memberNickname,
-          groupNickname: groupNicknames.get(username) || '',
-          wechatNickname: wechatNickname || memberNickname,
-          remark,
-          m_nsHeadImgUrl: avatar
-        }
-      })
-
-      const missingDisplayNames = members
-        .filter((member) => !member.nickname)
-        .map((member) => member.m_nsUsrName)
-        .filter(Boolean)
-      this.hydrateDisplayNames(missingDisplayNames)
+      const memberRows = Array.isArray(rows) ? rows : []
+      const contactNames = this.readContactMemberNames(this.groupMemberUsernames(memberRows))
+      const members = this.normalizeGroupMembers(memberRows, groupNicknames, contactNames)
       this.hydrateAvatarUrls(
         members
           .filter((member) => !member.m_nsHeadImgUrl)
           .map((member) => member.m_nsUsrName)
           .filter(Boolean)
       )
-      return members.map((member) => ({
-        ...member,
-        nickname:
-          member.nickname || this.displayNameCache.get(member.m_nsUsrName) || member.m_nsUsrName,
-        wechatNickname:
-          member.wechatNickname || this.displayNameCache.get(member.m_nsUsrName) || '',
-        m_nsHeadImgUrl: member.m_nsHeadImgUrl || this.avatarCache.get(member.m_nsUsrName) || ''
-      }))
+      return this.withCachedGroupMemberAvatars(members)
     } catch {
       return []
     }
@@ -1825,70 +1817,98 @@ export class Wcdb4Client {
         this.wcdbGetGroupMembers as unknown as KoffiAsyncFunction,
         chatroomId
       )
-      const members = (Array.isArray(rows) ? rows : []).map((row) => {
-        const username = this.pickString(row, [
+      const memberRows = Array.isArray(rows) ? rows : []
+      const contactNames = await this.readContactMemberNamesAsync(
+        this.groupMemberUsernames(memberRows)
+      )
+      const members = this.normalizeGroupMembers(memberRows, groupNicknames, contactNames)
+      const missingAvatars = members
+        .filter((member) => !member.m_nsHeadImgUrl)
+        .map((member) => member.m_nsUsrName)
+        .filter(Boolean)
+      await this.hydrateAvatarUrlsAsync(missingAvatars)
+      return this.withCachedGroupMemberAvatars(members)
+    } catch (error) {
+      console.warn(`[WCDB4] async group members failed chatroom=${chatroomId}:`, error)
+      return []
+    }
+  }
+
+  /**
+   * 将群成员接口与联系人表组装为语义明确的成员快照。
+   *
+   * 群昵称只接受群聊数据；微信昵称与通讯录备注只接受 contact 表。即使群成员
+   * 接口返回了 nickname，也不能作为名称字段的回退，以免把通讯录备注误展示为微信昵称。
+   */
+  private normalizeGroupMembers(
+    rows: Record<string, unknown>[],
+    groupNicknames: Map<string, string>,
+    contactNames: Map<string, Wcdb4ContactMemberNames>
+  ): Wcdb4GroupMember[] {
+    return rows.map((row) => {
+      const username = this.pickString(row, [
+        'username',
+        'userName',
+        'user_name',
+        'member_username',
+        'm_nsUsrName'
+      ])
+      const rowGroupNickname = this.pickString(row, [
+        'groupNickname',
+        'group_nickname',
+        'displayName',
+        'display_name'
+      ])
+      const groupNickname = groupNicknames.get(username) || rowGroupNickname
+      const contact = contactNames.get(username)
+      const wechatNickname = contact?.wechatNickname || ''
+      const remark = contact?.remark || ''
+      const avatar = this.pickString(row, [
+        'avatarUrl',
+        'avatar_url',
+        'headImgUrl',
+        'm_nsHeadImgUrl'
+      ])
+
+      if (username && avatar) this.avatarCache.set(username, avatar)
+
+      return {
+        m_nsUsrName: username,
+        // nickname 是旧调用方使用的通用显示字段，保持安全的名称优先级。
+        nickname: wechatNickname || groupNickname || username,
+        groupNickname,
+        wechatNickname,
+        remark,
+        m_nsHeadImgUrl: avatar
+      }
+    })
+  }
+
+  /**
+   * 从原始群成员行提取联系人查询键，避免把空值传进 SQL IN 条件。
+   */
+  private groupMemberUsernames(rows: Record<string, unknown>[]): string[] {
+    return rows
+      .map((row) =>
+        this.pickString(row, [
           'username',
           'userName',
           'user_name',
           'member_username',
           'm_nsUsrName'
         ])
-        const wechatNickname = this.pickString(row, [
-          'nickname',
-          'nickName',
-          'wechatNickname',
-          'wechat_nickname',
-          'm_nsNickName'
-        ])
-        const remark = this.pickString(row, [
-          'remark',
-          'remarkName',
-          'remark_name',
-          'contactRemark',
-          'contact_remark'
-        ])
-        const memberNickname = this.pickString(row, ['displayName', 'display_name', 'name'])
-        const avatar = this.pickString(row, [
-          'avatarUrl',
-          'avatar_url',
-          'headImgUrl',
-          'm_nsHeadImgUrl'
-        ])
-        if (username && avatar) this.avatarCache.set(username, avatar)
-        return {
-          m_nsUsrName: username,
-          nickname: groupNicknames.get(username) || remark || wechatNickname || memberNickname,
-          groupNickname: groupNicknames.get(username) || '',
-          wechatNickname: wechatNickname || memberNickname,
-          remark,
-          m_nsHeadImgUrl: avatar
-        }
-      })
+      )
+      .filter(Boolean)
+  }
 
-      const missingNames = members
-        .filter((member) => !member.nickname)
-        .map((member) => member.m_nsUsrName)
-        .filter(Boolean)
-      const missingAvatars = members
-        .filter((member) => !member.m_nsHeadImgUrl)
-        .map((member) => member.m_nsUsrName)
-        .filter(Boolean)
-      await Promise.all([
-        this.hydrateDisplayNamesAsync(missingNames),
-        this.hydrateAvatarUrlsAsync(missingAvatars)
-      ])
-      return members.map((member) => ({
-        ...member,
-        nickname:
-          member.nickname || this.displayNameCache.get(member.m_nsUsrName) || member.m_nsUsrName,
-        wechatNickname:
-          member.wechatNickname || this.displayNameCache.get(member.m_nsUsrName) || '',
-        m_nsHeadImgUrl: member.m_nsHeadImgUrl || this.avatarCache.get(member.m_nsUsrName) || ''
-      }))
-    } catch (error) {
-      console.warn(`[WCDB4] async group members failed chatroom=${chatroomId}:`, error)
-      return []
-    }
+  /**
+   * 为已标准化的成员补充头像缓存，不参与名称字段的回退。
+   */
+  private withCachedGroupMemberAvatars(members: Wcdb4GroupMember[]): Wcdb4GroupMember[] {
+    return members.map((member) => ({
+      ...member,
+      m_nsHeadImgUrl: member.m_nsHeadImgUrl || this.avatarCache.get(member.m_nsUsrName) || ''
+    }))
   }
 
   getGroupNicknames(chatroomId: string): Map<string, string> {
@@ -1954,32 +1974,104 @@ export class Wcdb4Client {
     }
 
     const handle = this.ensureHandle()
-    const outHex: WcdbVoidOut = [null]
-
-    try {
-      const result = this.wcdbGetVoiceData(
+    const fn = this.wcdbGetVoiceData as unknown as KoffiAsyncFunction
+    return this.createTrackedNativeCall<Wcdb4VoiceDataResult>((resolve, reject) => {
+      const outHex: WcdbVoidOut = [null]
+      fn.async(
         handle,
         sessionId,
         createTime,
         localId,
         BigInt(svrId || 0),
         JSON.stringify(candidates),
-        outHex
+        outHex,
+        (error: unknown, code: unknown) => {
+          if (error) {
+            reject(error)
+            return
+          }
+          try {
+            const result = Number(code)
+            if (result !== 0 || !outHex[0]) {
+              resolve({ success: false, error: `获取语音数据失败: ${result}` })
+              return
+            }
+            const hex = this.decodeHexPtr(outHex[0])
+            resolve(
+              hex === null
+                ? { success: false, error: '解析语音数据失败' }
+                : { success: true, hex, error: '' }
+            )
+          } finally {
+            this.wcdbFreeString?.(outHex[0])
+          }
+        }
       )
+    })
+  }
 
-      if (result !== 0 || !outHex[0]) {
-        return { success: false, error: `获取语音数据失败: ${result}` }
-      }
-
-      const hex = this.decodeHexPtr(outHex[0])
-      if (hex === null) {
-        return { success: false, error: '解析语音数据失败' }
-      }
-
-      return { success: true, hex, error: '' }
-    } finally {
-      this.wcdbFreeString?.(outHex[0])
+  async getVoiceDataBatch(requests: Wcdb4VoiceDataRequest[]): Promise<Wcdb4VoiceDataResult[]> {
+    if (!requests.length) return []
+    if (!this.wcdbGetVoiceDataBatch) {
+      return this.getVoiceDataIndividually(requests)
     }
+
+    try {
+      const rows = await this.callJsonAsync<Record<string, unknown>[]>(
+        this.wcdbGetVoiceDataBatch,
+        JSON.stringify(
+          requests.map((request, index) => ({
+            session_id: request.sessionId,
+            create_time: request.createTime,
+            local_id: request.localId || 0,
+            svr_id: String(request.svrId || 0),
+            candidates: request.candidates,
+            index
+          }))
+        )
+      )
+      const byIndex = new Map(
+        (Array.isArray(rows) ? rows : []).map((row) => [Number(row.index), row])
+      )
+      return requests.map((_, index) => {
+        const row = byIndex.get(index)
+        const rawHex = row?.hex ?? row?.data
+        const rawSuccess = row?.success ?? row?.Success
+        const hex = typeof rawHex === 'string' ? rawHex : undefined
+        const success = (rawSuccess === true || Number(rawSuccess) === 1) && Boolean(hex)
+        return {
+          success,
+          hex: success ? hex : undefined,
+          error:
+            typeof row?.error === 'string' && row.error
+              ? row.error
+              : success
+                ? ''
+                : '获取语音数据失败'
+        }
+      })
+    } catch (error) {
+      console.warn('[WCDB4] batch voice lookup failed, using single-item fallback:', error)
+      return this.getVoiceDataIndividually(requests)
+    }
+  }
+
+  private async getVoiceDataIndividually(
+    requests: Wcdb4VoiceDataRequest[]
+  ): Promise<Wcdb4VoiceDataResult[]> {
+    const results: Wcdb4VoiceDataResult[] = []
+    for (const request of requests) {
+      results.push(
+        await this.getVoiceData(
+          request.sessionId,
+          request.createTime,
+          request.candidates,
+          request.localId,
+          request.svrId
+        )
+      )
+    }
+    return results
   }
 
   private decodeHexPtr(ptr: unknown): string | null {
@@ -2278,6 +2370,14 @@ export class Wcdb4Client {
       ) => number
     } catch {
       this.wcdbGetVoiceData = null
+    }
+
+    try {
+      this.wcdbGetVoiceDataBatch = lib.func(
+        'int32 wcdb_get_voice_data_batch(int64 handle, const char* requestsJson, _Out_ void** outJson)'
+      )
+    } catch {
+      this.wcdbGetVoiceDataBatch = null
     }
 
     try {
@@ -2659,27 +2759,6 @@ export class Wcdb4Client {
     return false
   }
 
-  private hydrateDisplayNames(usernames: string[]): void {
-    if (!this.wcdbGetDisplayNames) return
-    const missing = this.uniq(usernames).filter((username) => !this.displayNameCache.has(username))
-    if (missing.length === 0) return
-
-    try {
-      const rows = this.callJson<Record<string, string> | Record<string, unknown>[]>(
-        (handle, outJson) => this.wcdbGetDisplayNames!(handle, JSON.stringify(missing), outJson)
-      )
-      this.readStringMap(rows, [
-        'nickname',
-        'displayName',
-        'display_name',
-        'remark',
-        'name'
-      ]).forEach((name, username) => this.displayNameCache.set(username, name))
-    } catch {
-      // Names are optional; usernames are still enough to load chats.
-    }
-  }
-
   private async hydrateDisplayNamesAsync(usernames: string[]): Promise<void> {
     if (!this.wcdbGetDisplayNames) return
     const missing = this.uniq(usernames).filter((username) => !this.displayNameCache.has(username))
@@ -2783,6 +2862,85 @@ export class Wcdb4Client {
     } catch {
       // Avatars are optional.
     }
+  }
+
+  /**
+   * 从 contact 表读取群成员的微信昵称与通讯录备注。
+   *
+   * 查询失败时返回空映射：群成员快照仍可用，并由调用方回退到群昵称或 wxid；
+   * 不得使用群成员接口的 nickname，因为该字段可能实际保存的是通讯录备注。
+   */
+  private readContactMemberNames(usernames: string[]): Map<string, Wcdb4ContactMemberNames> {
+    const result = new Map<string, Wcdb4ContactMemberNames>()
+    if (!this.wcdbExecQuery || usernames.length === 0) return result
+
+    const inList = this.uniq(usernames)
+      .map((username) => `'${username.replace(/'/g, "''")}'`)
+      .join(',')
+    if (!inList) return result
+
+    try {
+      const rows = this.callJson<Record<string, unknown>[]>((handle, outJson) =>
+        this.wcdbExecQuery!(
+          handle,
+          'contact',
+          '',
+          `SELECT username, nick_name, remark FROM contact WHERE username IN (${inList})`,
+          outJson
+        )
+      )
+      return this.contactMemberNamesFromRows(rows)
+    } catch {
+      return result
+    }
+  }
+
+  /**
+   * 异步读取 contact 表的成员名称字段，语义与同步路径保持一致。
+   */
+  private async readContactMemberNamesAsync(
+    usernames: string[]
+  ): Promise<Map<string, Wcdb4ContactMemberNames>> {
+    const result = new Map<string, Wcdb4ContactMemberNames>()
+    if (!this.wcdbExecQuery || usernames.length === 0) return result
+
+    const inList = this.uniq(usernames)
+      .map((username) => `'${username.replace(/'/g, "''")}'`)
+      .join(',')
+    if (!inList) return result
+
+    try {
+      const rows = await this.callJsonAsync<Record<string, unknown>[]>(
+        this.wcdbExecQuery as unknown as KoffiAsyncFunction,
+        'contact',
+        '',
+        `SELECT username, nick_name, remark FROM contact WHERE username IN (${inList})`
+      )
+      return this.contactMemberNamesFromRows(rows)
+    } catch {
+      return result
+    }
+  }
+
+  /**
+   * 将 contact 查询行转换为按 wxid 索引的名称映射。
+   */
+  private contactMemberNamesFromRows(
+    rows: Record<string, unknown>[]
+  ): Map<string, Wcdb4ContactMemberNames> {
+    const result = new Map<string, Wcdb4ContactMemberNames>()
+    if (!Array.isArray(rows)) return result
+
+    for (const row of rows) {
+      const username = this.pickString(row, ['username', 'user_name', 'userName', 'm_nsUsrName'])
+      if (!username) continue
+      result.set(username, {
+        wechatNickname: this.pickString(row, ['nick_name', 'nickName', 'm_nsNickName']),
+        remark: this.pickString(row, ['remark', 'remark_name', 'remarkName'])
+      })
+    }
+
+    return result
   }
 
   private readContactAvatarUrls(usernames: string[]): Map<string, string> {

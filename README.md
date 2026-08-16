@@ -44,10 +44,18 @@
 你可以直接浏览聊天，也可以用自然语言提问：
 
 > “上个月我们讨论过哪些发布问题？”
+>
 > “张三之前发过的项目地址在哪里？”
+>
 > “技术交流群今天有哪些结论和待办？”
 
-它和普通聊天记录查看器最大的不同，是 AI 不只是告诉你答案，还会告诉你答案来自哪里。你可以看到答案参考了哪些内容、来自哪个会话和时间，再回到原始消息确认它有没有理解错。
+它和普通聊天记录查看器最大的不同，是 AI 不只是告诉你答案，还会告诉你答案来自哪里。
+
+你可以看到答案参考了哪些内容、来自哪个会话和时间，再回到原始消息确认它有没有理解错。
+
+Wemento 不提供任何微信聊天数据，也不鼓励收集、上传、出售、共享或未经授权处理他人的聊天记录。使用 Wemento 时，请确保你对所处理的数据具有合法的访问和使用权限，并自行承担相应的数据安全与合规责任。
+
+---
 
 > [!NOTE]
 > 微念（Wemento）是基于 [WechatExplorer](https://github.com/Wxw-Gu/WechatExplorer) 的个人维护分支与发行版，保留上游项目的核心能力，并维护 Wemento 专属的 Windows 构建、兼容性修复和发布。仓库的 `main` 分支用于同步上游，`personal` 是 Wemento 的稳定集成与发行分支。
@@ -55,7 +63,7 @@
 ## 💬 交流与反馈
 
 <p align="center">
-  <img src="./public/二维码.jpg" alt="WechatExplorer 交流与售后群二维码" width="280" />
+  <img src="./public/二维码.jpg" alt="Wemento 交流与售后群二维码" width="280" />
 </p>
 
 ## 从你的任务开始
@@ -66,6 +74,7 @@
 | 找一件记得大意、但不知道在哪聊过的事      | [问问微信](./docs/user-guide/ai-search.md)              | 配置 AI 服务，并选择会话和时间范围   |
 | 让长期、跨群聊查找更稳定                  | [问问微信 → 本地知识库](./docs/user-guide/knowledge.md) | 主动建立本地索引；不会自动创建       |
 | 快速了解一个群今天、昨天或近 7 天聊了什么 | [日报](./docs/user-guide/report.md)                     | 选择群聊并配置 AI 服务               |
+| 把群聊日报生成微信分享卡片（实验性）      | [微信分享卡片](./docs/deployment/experimental-wechat-share-card.md) | 自备 Cloudflare、域名和微信测试号    |
 | 把微信语音变成可搜索的文字                | [设置 → 语音转文字](./docs/user-guide/voice.md)         | 准备本地语音模型                     |
 | 把聊天保存成 HTML、Markdown、CSV 或 JSON  | [导出](./docs/user-guide/export.md)                     | 选择聊天、时间和格式，不需要 AI      |
 | 尽量保留之后捕获到的撤回消息              | [设置 → 防撤回](./docs/user-guide/recall-protection.md) | 默认关闭；开启前先了解写入和性能边界 |
@@ -74,14 +83,25 @@
 
 ## 最核心的三个能力
 
-### 浏览和搜索微信历史
+### 生成群聊日报
 
-- 浏览联系人、群聊、折叠群聊和公众号消息。
-- 查看文本、图片、视频、语音、文件、链接、引用、小程序等内容。
-- 搜索会话或当前聊天中的关键词。
-- 从 AI 结果跳回对应聊天位置。
+选择群聊和时间范围后，可以让 AI 把聊天整理成报告，并保存为 HTML 与 PNG 长图。
 
-详细说明：[聊天档案与普通搜索](./docs/user-guide/chat-archive.md)
+报告包含：
+
+- 热点
+- 重要消息
+- 资源
+- 问答
+- 待办
+- 未解决事项
+- 活跃统计
+- 图片精选
+
+具体内容取决于消息、媒体是否可读以及模型能力。
+详细说明：[生成群聊日报](./docs/user-guide/report.md)
+
+</details>
 
 ### AI 帮你找回聊过的内容
 
@@ -99,7 +119,7 @@ Wemento 会先在本机查找候选消息，再把整理后的少量来源交给
 
 打开应用中的“Agent”入口（页面标题为“Agent Hub”，对应微信机器人功能），扫码连接一个微信机器人账号。例如，你可以直接给机器人发送“最近 5 个会话”“张三最近和我聊了什么”，或者让它生成指定群聊的总结图片。Wemento 会在本机读取已连接的聊天数据并把结果回复到微信。
 
-这个入口不要求另外安装 Codex、Claude Code 等外部 Agent。当前主要处理文字消息，不支持群发、定时任务或通用自主操作微信；总结和自然语言理解需要先配置 AI 服务。
+例如，你可以直接给机器人发送：
 
 详细步骤和能力边界见[在微信里向 Wemento 提问](./docs/agent/agent-hub.md)。
 
@@ -107,24 +127,31 @@ Wemento 会先在本机查找候选消息，再把整理后的少量来源交给
 
 ### 本地知识库
 
-“问问微信”里的“本地知识库”会为当前微信账号建立一份留在本机的可检索资料。它把聊天文本、附件信息和已有语音转写整理起来，让跨会话、跨时间查找更稳定。
+<details>
+“问问微信”里的“本地知识库”会为当前微信账号建立一份留在本机的可检索资料。
+
+它把聊天文本、附件信息和已有语音转写整理起来，让跨会话、跨时间查找更稳定。
 
 它只在用户主动建立后工作，可以同步、查看占用并清理；清理不会删除微信原始数据库。
 
 详细说明：[本地知识库](./docs/user-guide/knowledge.md)
 
-### 生成群聊日报
+</details>
+
+### 实验性：生成微信分享卡片
 
 <details>
-<summary>查看群聊日报示例、内容和导出方式</summary>
+Wemento 可以把群聊日报长图上传到你自己部署的 Cloudflare Worker 和 R2，并生成可在微信中分享的临时网页、二维码及卡片信息。
 
-选择群聊和时间范围后，可以让 AI 把聊天整理成报告，并保存为 HTML 与 PNG 长图。报告可能包含热点、重要消息、资源、问答、待办、未解决事项、活跃统计和图片精选；具体内容取决于消息、媒体是否可读以及模型能力。
+该功能需要自备 Cloudflare 账号、域名和微信测试号，目前不属于开箱即用的稳定功能。
 
 <p align="center">
-  <img src="./public/report-template-1.png" alt="群聊日报示例" />
+  <img src="./public/微信卡片分享.png" alt="微信卡片分享效果示例" />
 </p>
 
-详细说明：[生成群聊日报](./docs/user-guide/report.md)
+详细说明：[实验性微信分享卡片](./docs/deployment/experimental-wechat-share-card.md)。
+
+不熟悉命令行的用户，可以把[自动部署 Skill](./docs/skill/setup-wechat-share-card/SKILL.md)直接交给 Codex 或 Claude Code。
 
 </details>
 
@@ -142,15 +169,30 @@ Wemento 支持在本机转写单条或批量微信语音，结果可以参与本
 
 ### 导出长期可用的聊天档案
 
-支持 HTML、CSV、JSON 和 Markdown。HTML 可携带媒体、头像和可选语音转写，支持最多五个会话合并，也可以压缩为 ZIP；增量合并、媒体资源和 ZIP 只适用于 HTML，其他格式主要保留文本内容。
+<details>
+支持 HTML、CSV、JSON 和 Markdown。
+
+HTML 可携带媒体、头像和可选语音转写，支持最多五个会话合并，也可以压缩为 ZIP；增量合并、媒体资源和 ZIP 只适用于 HTML，其他格式主要保留文本内容。
 
 详细说明：[导出聊天](./docs/user-guide/export.md)
 
+</details>
+
 ### 在外部 Agent 中查询微信历史
 
-通过 Reader Skill 和本机 Local HTTP API，Codex、Claude Code、OpenClaw 等外部 Agent 可以按需查询联系人、群聊和聊天记录。这和微信机器人是两条不同路径：微信机器人收到消息后在微信中回复；外部 Agent 则主动查询历史。
+<details>
+通过 Reader Skill 和本机 Local HTTP API，Codex、Claude Code、OpenClaw 等外部 Agent 可以按需查询联系人、群聊和聊天记录。
+
+这和微信机器人是两条不同路径：
+
+- **微信机器人**：收到消息后在微信中回复。
+- **外部 Agent**：主动查询历史。
 
 安装和技术说明请看[Agent 接入概览](./docs/agent/overview.md)与[Local HTTP API](./docs/agent/api.md)。
+
+</details>
+
+---
 
 ## 它如何工作
 
@@ -179,6 +221,8 @@ flowchart LR
 
 完整边界见：[数据、隐私与安全](./docs/user-guide/privacy.md)
 
+---
+
 ## 支持平台与安装包
 
 | 平台    | 处理器架构                           | Releases 安装包                  |
@@ -190,13 +234,13 @@ flowchart LR
 
 ## 版本与发布
 
-当前版本为 **v2.1.11**。本次发布包含：
+当前已发布版本为 **v2.1.13**。近期 Wemento 发布重点包括：
 
 - 将设置、密钥、缓存、模型、日志、导出、日报和连接器状态统一到程序目录下的 `data`；
 - 从 `%APPDATA%\WechatExplorer` 等旧位置安全复制已有数据，不覆盖新文件，也不自动删除旧副本；
 - 同时支持安装版、解压便携版和单文件 Portable EXE，并在升级或普通卸载时保留 `data`。
 
-正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.11 发布说明](./docs/release-notes-v2.1.11.md)。
+正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.13 发布说明](./docs/release-notes-v2.1.13.md)。
 
 ## 快速开始
 
@@ -208,17 +252,25 @@ flowchart LR
 6. 需要 AI 问答或日报时，在“设置 → AI 模型”添加并测试 AI 服务，再打开“问问微信”或“日报”。
 7. 想直接在微信里提问时，打开“Agent”扫码连接微信机器人；想让 Codex 等外部 Agent 查询时，再进入“API”。
 
+Windows 安装后无法启动时，请先安装 [Microsoft Visual C++ x64 运行库](https://aka.ms/vc14/vc_redist.x64.exe)。
+
+当前完整测试过的微信客户端为 Windows `4.1.9.57` 和 macOS `4.1.8.100`；下载地址与连接要求见[第一次使用](./docs/user-guide/getting-started.md)。
+
 如果 macOS 页面提示处理 SIP，请先阅读对应说明。具体步骤和限制见[第一次使用](./docs/user-guide/getting-started.md)。
 
 完整步骤：[第一次使用 Wemento](./docs/user-guide/getting-started.md)
 
 ## 配置 AI
 
-需要 AI 问答、群聊日报或图片理解时，在“设置 → AI 模型”添加并测试一个服务。应用支持云端服务、Ollama 等本地服务和自定义接口；具体服务商的配置、计费和数据规则由服务商决定。
+需要 AI 问答、群聊日报或图片理解时，在“设置 → AI 模型”添加并测试一个服务。
+
+应用支持云端服务、Ollama 等本地服务和自定义接口；具体服务商的配置、计费和数据规则由服务商决定。
 
 使用本地服务可以减少数据离开电脑的路径，但本地服务的日志和配置仍由你自己负责。
 
 开发者和 Agent 用户可以从[Agent 接入概览](./docs/agent/overview.md)开始，再按需要查看[Local HTTP API](./docs/agent/api.md)与[API 安全](./docs/agent/api-security.md)。
+
+---
 
 ## 文档
 
@@ -228,6 +280,8 @@ flowchart LR
 - [AI 查找聊天信息](./docs/user-guide/ai-search.md)
 - [本地知识库](./docs/user-guide/knowledge.md)
 - [群聊日报](./docs/user-guide/report.md)
+- [实验性微信分享卡片](./docs/deployment/experimental-wechat-share-card.md)
+- [微信分享卡片自动部署 Skill](./docs/skill/setup-wechat-share-card/SKILL.md)
 - [语音转文字](./docs/user-guide/voice.md)
 - [导出聊天](./docs/user-guide/export.md)
 - [防撤回](./docs/user-guide/recall-protection.md)
@@ -236,6 +290,8 @@ flowchart LR
 - [微信机器人与 Agent Hub](./docs/agent/agent-hub.md)
 - [Local HTTP API](./docs/agent/api.md)
 - [开发与测试](./docs/development/overview.md)
+
+---
 
 ## 本地开发
 
@@ -258,11 +314,25 @@ pnpm test:e2e:build
 
 完整说明：[开发、测试与构建](./docs/development/overview.md)
 
+---
+
 ## 支持与反馈
 
 遇到问题时，先查看[常见问题与排查](./docs/user-guide/troubleshooting.md)。提交 [Issue](https://github.com/qiuqiu-2/Wemento/issues) 时请提供操作系统、微信版本、Wemento 版本、复现步骤和已遮挡敏感信息的截图。
 
-请仅处理你有权访问的数据，并遵守适用的法律法规、组织政策和微信使用规则。数据库读取、解密、自动化和机器人能力都可能受平台版本与账号环境影响。
+提交 Issue 时请提供：
+
+- 操作系统
+- 微信版本
+- Wemento 版本
+- 复现步骤
+- 已遮挡敏感信息的截图
+
+请仅处理你有权访问的数据，并遵守适用的法律法规、组织政策和微信使用规则。
+
+数据库读取、解密、自动化和机器人能力都可能受平台版本与账号环境影响。
+
+---
 
 ## 许可说明
 
@@ -270,31 +340,13 @@ pnpm test:e2e:build
 
 ## 致谢
 
-<details>
-  <summary>展开致谢与参考项目</summary>
+Wemento 基于上游 [TraceMemo（原 WechatExplorer）](https://github.com/Wxw-Gu/WechatExplorer) 持续维护，并保留上游关于本地搜索、AI 问答、来源追溯、日报、语音转写和 Agent 能力的工作。
 
-WechatExplorer 在开发过程中参考了多个优秀的开源项目，感谢这些项目作者的工作与分享。
+特别感谢 [WeFlow](https://github.com/hicccc77/WeFlow) 及作者 **hicccc77**。项目在支持微信 4.x 时参考并使用了 WeFlow 历史版本中的数据库密钥获取、图片解密等实现与思路。
 
-特别感谢：
+其他参考项目包括：
 
-- **[WechatMessageExplorer](https://github.com/svcvit/WechatMessageExplorer)**
-  - 提供了微信数据库解析相关思路。
-- **[WeFlow](https://github.com/hicccc77/WeFlow)**
-  - 参考了数据库密钥获取、图片解密等实现思路。
-- **[chatlog](https://github.com/sjzar/chatlog)**
-  - 提供了聊天记录导出与数据处理方面的参考。
+- [WechatMessageExplorer](https://github.com/svcvit/WechatMessageExplorer)：提供数据库解析相关思路；
+- [chatlog](https://github.com/sjzar/chatlog)：提供数据处理方面的参考。
 
-在此基础上，WechatExplorer 进行了重新设计与实现，包括：
-
-- AI 问问微信
-- AI 群聊日报
-- 本地 HTTP API
-- Reader Skill
-- Agent Hub
-- 新手引导
-- Electron + React 全新界面
-- 本地优先 AI 工作流
-
-感谢所有开源作者。
-
-</details>
+感谢所有开源作者，以及所有帮助 Wemento 发现问题、提出建议和持续使用它的人。

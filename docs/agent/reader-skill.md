@@ -8,6 +8,8 @@ Reader Skill 是一份给 Agent 的操作说明。安装后，Codex、Claude Cod
 
 Reader Skill 只负责“外部 Agent 主动查询历史微信数据”。它不负责二维码登录、监听微信实时消息、接收机器人消息或管理 Agent Hub。想让机器人收到微信消息后处理并回复，请阅读[Agent Hub](./agent-hub.md)。
 
+Wemento 分发的 Reader Skill 目录是 `wechatexplorer-reader`。新安装使用 `WEMENTO_API_TOKEN`；已有配置可继续使用兼容变量 `WECHATEXPLORER_API_TOKEN`。
+
 ## 推荐安装流程
 
 1. 启动 Wemento 并完成数据库连接。
@@ -17,7 +19,7 @@ Reader Skill 只负责“外部 Agent 主动查询历史微信数据”。它不
 5. 在 API Center 复制 Token，在 Agent 自己的本地环境设置：
 
    ```bash
-   export WECHATEXPLORER_API_TOKEN="<YOUR_API_TOKEN>"
+   export WEMENTO_API_TOKEN="<YOUR_API_TOKEN>"
    ```
 
 6. 先执行 health 检查，再读取数据端点。
@@ -39,7 +41,7 @@ Wemento 不会自动把 Token 写进 Agent 配置。重新生成 Token 后，必
 ```bash
 curl http://127.0.0.1:6131/api/v1/health
 
-curl -H "Authorization: Bearer $WECHATEXPLORER_API_TOKEN" \
+curl -H "Authorization: Bearer $WEMENTO_API_TOKEN" \
   "http://127.0.0.1:6131/api/v1/recent_chat?limit=20"
 ```
 
