@@ -11,7 +11,8 @@ description: 通过 Wemento 本地 HTTP API 按需读取用户有权访问的微
 
 - Base URL 默认是 `http://127.0.0.1:6131/api/v1`。
 - `GET /health` 不需要 Token。
-- 其他端点必须带 `Authorization: Bearer $WECHATEXPLORER_API_TOKEN`。
+- 其他端点必须带 `Authorization: Bearer $WEMENTO_API_TOKEN`。
+- 新配置优先读取 `WEMENTO_API_TOKEN`；为兼容已安装的旧 Reader，可在新变量缺失时回退到 `WECHATEXPLORER_API_TOKEN`。
 - Token 由用户在 Wemento → API Center 显示/复制，并放在 Agent 自己的本地环境中。
 - 不要把 Token 放到 URL、回答、日志、Skill 文件或仓库。
 - 6131 是普通 Local HTTP API，不是 MCP Server；不要生成 `mcpServers` 配置。

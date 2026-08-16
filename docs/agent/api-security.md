@@ -6,6 +6,8 @@ Wemento 的本地 API 默认监听 `127.0.0.1:6131`。它面向同一台电脑�
 
 ## Bearer Token
 
+新 Agent 配置使用 `WEMENTO_API_TOKEN`。Wemento 仍兼容历史变量 `WECHATEXPLORER_API_TOKEN`，优先级为新变量高于旧变量。
+
 - `/api/v1/health` 是公开健康检查；
 - 其他所有端点都要求 `Authorization: Bearer <TOKEN>`；
 - Token 由应用生成，使用 32 个随机字节编码；
@@ -17,7 +19,7 @@ Wemento 的本地 API 默认监听 `127.0.0.1:6131`。它面向同一台电脑�
 应用不会自动把 Token 写入 Codex、Claude Code、OpenClaw 或其他 Agent 配置。请把它放进 Agent 自己的本地 secret/environment，例如：
 
 ```bash
-export WECHATEXPLORER_API_TOKEN="<TOKEN>"
+export WEMENTO_API_TOKEN="<TOKEN>"
 ```
 
 ## CORS 与 Origin

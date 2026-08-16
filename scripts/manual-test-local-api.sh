@@ -7,7 +7,7 @@ set -u
 
 API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:6131}"
 API_BASE_URL="${API_BASE_URL%/}"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wechatexplorer-api-test.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wemento-api-test.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 PASS_COUNT=0

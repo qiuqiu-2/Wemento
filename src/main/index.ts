@@ -27,14 +27,27 @@ import {
   inspectImageDecoderStatus,
   type DecodedImage
 } from './image-decrypt-service'
-import { exportGroupReport } from './group-report-service'
+import {
+  exportGroupReport,
+  exportGroupReportSnapshot,
+  extractGroupReportRenderSnapshot
+} from './group-report-service'
 import {
   deleteGeneratedReport,
   listGeneratedReports,
-  saveGeneratedReport
+  prepareGeneratedReportTemplateSwitch,
+  saveGeneratedReport,
+  updateGeneratedReportTemplate
 } from './report-history-service'
-import type { GroupReportExportRequest } from '../shared/group-report'
-import type { SaveGeneratedReportRequest } from '../shared/report-history'
+import type {
+  GroupReportExportRequest,
+  GroupReportRenderSnapshotExportRequest
+} from '../shared/group-report'
+import type {
+  SaveGeneratedReportRequest,
+  PrepareGeneratedReportTemplateSwitchRequest,
+  UpdateGeneratedReportTemplateRequest
+} from '../shared/report-history'
 import type {
   AIChatRequestOptions,
   AiSearchExternalAuthorizationRequest,
@@ -97,7 +110,7 @@ import { agentHubService } from './services/agent-hub-service'
 import { appLogger } from './app-logger'
 import type { AppLogEntry } from '../shared/app-log'
 import { appUpdateService } from './services/app-update-service'
-import { clearCache, getCacheSummary } from './services/cache-service'
+import { clearCache, getCacheSummary, openKnowledgeDirectory } from './services/cache-service'
 import type { CacheClearScope } from './services/cache-service'
 import { configureRecallArchive, RecallArchiveMonitor } from './services/recall-archive-service'
 import { VideoAssetService } from './video-asset-service'
@@ -109,8 +122,18 @@ import { VoiceBatchService } from './voice-pipeline/voice-batch-service'
 import type { VoiceBatchRequest, VoiceMessageReference } from '../shared/voice-recognition'
 import type { AiSearchPipelineRequest } from '../shared/ai-search'
 import type { KnowledgeSearchIpcRequest, KnowledgeSearchIpcResult } from '../shared/knowledge'
+import {
+  isWindowsVcRuntimeMissingError,
+  WINDOWS_VC_RUNTIME_ERROR_MESSAGE
+} from '../shared/windows-runtime'
 import { KnowledgeSearchService } from './knowledge/knowledge-search-service'
 import { AiSearchPipelineService } from './services/ai-search-pipeline-service'
+import { WechatShareConfigStore } from './wechat-share-config-store'
+import { WechatShareCardService } from './wechat-share-card-service'
+import type {
+  PublishWechatShareCardRequest,
+  WechatShareServiceConfig
+} from '../shared/wechat-share-card'
 
 // electron-vite can close the child's stdout/stderr after spawning Electron.
 // Plain console.error then throws EPIPE on a closed pipe and crashes the IPC
@@ -130,6 +153,8 @@ const imageKeyConfigService = new ImageKeyConfigService()
 const aiProviderService = new AIProviderService()
 const keyServiceMac = new KeyServiceMac()
 const keyServiceWin = new KeyServiceWin()
+const wechatShareConfigStore = new WechatShareConfigStore()
+const wechatShareCardService = new WechatShareCardService(wechatShareConfigStore)
 let tray: Tray | null = null
 let recallArchiveMonitor: RecallArchiveMonitor | null = null
 let recallProtectionGeneration = 0
@@ -271,6 +296,7 @@ protocol.registerSchemesAsPrivileged([
 let dbInitInFlight: Promise<{ success: boolean; monitoring?: boolean; error?: string }> | null =
   null
 let appShutdownRequested = false
+let isQuitting = false
 const BUILD_MARK = 'wechat4-local-http-api-2026-07-03'
 const TRAY_MODE =
   process.argv.includes('--tray') || (process.env['WXE_TRAY'] || '').toString() === '1'
@@ -405,9 +431,46 @@ function createWindow(): void {
       sandbox: false
     }
   })
+  let closePromptInFlight = false
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  mainWindow.on('close', (event) => {
+    if (isQuitting || appShutdownRequested) return
+    event.preventDefault()
+    if (closePromptInFlight) return
+    closePromptInFlight = true
+    void dialog
+      .showMessageBox(mainWindow, {
+        type: 'question',
+        title: '关闭 Wemento',
+        message: '请选择关闭方式',
+        detail: '你可以将窗口隐藏到系统托盘，或退出整个应用进程。',
+        buttons: ['最小化到系统托盘', '关闭进程', '取消'],
+        defaultId: 0,
+        cancelId: 2,
+        noLink: true
+      })
+      .then(({ response }) => {
+        if (response === 0) {
+          setupTray()
+          mainWindow.hide()
+          if (process.platform === 'darwin') app.dock?.hide()
+          return
+        }
+        if (response === 1) {
+          isQuitting = true
+          app.quit()
+        }
+      })
+      .catch((error) => {
+        console.warn('[Window] close prompt failed:', error)
+      })
+      .finally(() => {
+        closePromptInFlight = false
+      })
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -495,6 +558,13 @@ app.whenReady().then(async () => {
   wcdbBootstrapPromise = bootstrapWcdbNativeAsync().then(() => {
     console.log('[WCDB4] async bootstrap complete')
   })
+  void wcdbBootstrapPromise.catch((error) => {
+    appLogger.write({
+      level: 'error',
+      scope: 'wcdb-bootstrap',
+      message: error instanceof Error ? error.message : String(error)
+    })
+  })
 
   // 设置应用程序用户模型 ID
   electronApp.setAppUserModelId('com.wechatexplorer.app')
@@ -518,6 +588,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('app-update:download', () => appUpdateService.download())
   ipcMain.handle('app-update:install', () => appUpdateService.install())
   ipcMain.handle('cache:getSummary', () => getCacheSummary())
+  ipcMain.handle('cache:openKnowledgeDirectory', () => openKnowledgeDirectory())
   ipcMain.handle('cache:clear', async (_, scope: CacheClearScope) => {
     const allowedScopes: CacheClearScope[] = ['bootstrap', 'electron', 'knowledge', 'all']
     if (!allowedScopes.includes(scope)) return getCacheSummary()
@@ -614,7 +685,16 @@ app.whenReady().then(async () => {
         return { success: true, monitoring }
       } catch (error) {
         console.error('Failed to init DB:', error)
-        return { success: false, error: error instanceof Error ? error.message : String(error) }
+        const detail = error instanceof Error ? error.message : String(error)
+        if (isWindowsVcRuntimeMissingError(detail, process.platform)) {
+          return {
+            success: false,
+            code: 'VC_RUNTIME_MISSING',
+            error: WINDOWS_VC_RUNTIME_ERROR_MESSAGE,
+            monitoring: false
+          }
+        }
+        return { success: false, error: detail }
       } finally {
         dbInitInFlight = null
       }
@@ -962,6 +1042,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('ai:listProviders', () => aiProviderService.list())
   ipcMain.handle('ai:getRuntimeConfig', () => aiProviderService.getRuntimeConfig())
+  ipcMain.handle('ai:getVisionRuntimeConfig', () => aiProviderService.getVisionRuntimeConfig())
   ipcMain.handle('ai:saveProvider', (_, provider: AIProviderConfig) =>
     aiProviderService.save(provider)
   )
@@ -998,11 +1079,20 @@ app.whenReady().then(async () => {
   ipcMain.handle('report:export', async (_, request: GroupReportExportRequest) => {
     return exportGroupReport(request)
   })
+  ipcMain.handle(
+    'report:exportSnapshot',
+    async (_, request: GroupReportRenderSnapshotExportRequest) => exportGroupReportSnapshot(request)
+  )
 
   ipcMain.handle('export:start', async (event, request: ExportRequest) => {
     const window = BrowserWindow.fromWebContents(event.sender)
     if (!window) return { success: false, error: '窗口不可用' }
     return runExport(request, window, voiceRecognition || undefined)
+  })
+  ipcMain.handle('export:selectDirectory', async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showOpenDialog(window!, { properties: ['openDirectory', 'createDirectory'] })
+    return result.canceled ? { canceled: true } : { canceled: false, path: result.filePaths[0] }
   })
   ipcMain.handle('export:cancel', (_, jobId: string) => {
     cancelExport(jobId)
@@ -1024,6 +1114,19 @@ app.whenReady().then(async () => {
     return saveGeneratedReport(request)
   })
 
+  ipcMain.handle(
+    'report:updateGeneratedTemplate',
+    async (_, request: UpdateGeneratedReportTemplateRequest) => {
+      return updateGeneratedReportTemplate(request)
+    }
+  )
+
+  ipcMain.handle(
+    'report:prepareTemplateSwitch',
+    async (_, request: PrepareGeneratedReportTemplateSwitchRequest) =>
+      prepareGeneratedReportTemplateSwitch(request.reportId, extractGroupReportRenderSnapshot)
+  )
+
   ipcMain.handle('report:deleteGenerated', async (_, reportId: string) => {
     return deleteGeneratedReport(reportId)
   })
@@ -1036,6 +1139,14 @@ app.whenReady().then(async () => {
       return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   })
+
+  ipcMain.handle('wechat-share:getConfig', async () => wechatShareConfigStore.status())
+  ipcMain.handle('wechat-share:saveConfig', async (_, config: WechatShareServiceConfig) =>
+    wechatShareConfigStore.save(config)
+  )
+  ipcMain.handle('wechat-share:publish', async (_, request: PublishWechatShareCardRequest) =>
+    wechatShareCardService.publish(request)
+  )
 
   ipcMain.handle(
     'db:getVoiceData',
@@ -1080,6 +1191,10 @@ app.whenReady().then(async () => {
       return { success: false, code: 'NOT_CONNECTED', error: '语音识别服务尚未初始化' }
     }
     return voiceRecognition.recognize(reference)
+  })
+
+  ipcMain.handle('voice:getTranscriptSnapshot', (_, reference: VoiceMessageReference) => {
+    return voiceRecognition?.getTranscriptSnapshot(reference) || { state: 'pending' as const }
   })
 
   ipcMain.handle('voice:getBatchPreflight', (_, request: VoiceBatchRequest) => {
@@ -1536,10 +1651,8 @@ app.whenReady().then(async () => {
 
   await agentHubService.start(settings)
 
-  if (TRAY_MODE) {
-    app.dock?.hide()
-    setupTray()
-  }
+  setupTray()
+  if (TRAY_MODE) app.dock?.hide()
 
   app.on('activate', function () {
     // 在 macOS 上点击 Dock 图标且没有其他窗口打开时，
@@ -1563,6 +1676,7 @@ let quitCleanupComplete = false
 
 app.on('before-quit', (event) => {
   if (quitCleanupComplete) return
+  isQuitting = true
   appShutdownRequested = true
   event.preventDefault()
   if (quitCleanupStarted) return
@@ -1602,7 +1716,7 @@ app.on('before-quit', (event) => {
 })
 
 function showMainWindow(): void {
-  if (TRAY_MODE) app.dock?.show().catch(() => undefined)
+  if (process.platform === 'darwin') app.dock?.show().catch(() => undefined)
   const wins = BrowserWindow.getAllWindows()
   if (wins.length === 0) {
     createWindow()
@@ -1618,10 +1732,6 @@ function buildTrayMenu(): Menu {
   return Menu.buildFromTemplate([
     {
       label: '打开主窗口',
-      click: () => showMainWindow()
-    },
-    {
-      label: 'API 状态',
       click: () => showMainWindow()
     },
     { type: 'separator' },
@@ -1646,8 +1756,8 @@ function setupTray(): void {
       : image.resize({ width: traySize, height: traySize, quality: 'best' })
     tray = new Tray(trayImage)
     tray.setToolTip('Wemento')
-    tray.setContextMenu(buildTrayMenu())
     tray.on('click', () => showMainWindow())
+    tray.on('right-click', () => tray?.popUpContextMenu(buildTrayMenu()))
   } catch (error) {
     console.warn('[Tray] Failed to create tray:', error)
   }

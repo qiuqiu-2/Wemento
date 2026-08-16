@@ -3,7 +3,6 @@ import {
   GroupDailyReport,
   GroupReportMetadata,
   ReportFunBadge,
-  ReportMediaGalleryItem,
   ReportMode,
   ReportSpeakerRank,
   ReportVisionGalleryItem,
@@ -16,6 +15,8 @@ import type {
   ImageCandidate,
   ImageCandidateQuery
 } from '../../../shared/image-insight'
+import { calculateImageHeatScore, isHotImageCandidate } from '../../../shared/image-insight'
+import type { ReportModelChoice } from '../../../shared/ai-provider'
 
 interface ReportImageReadResult {
   success: boolean
@@ -57,6 +58,43 @@ export interface GroupReportFactsSnapshot {
   media: GroupDailyReport['media']
   voiceLeaderboard: ReportVoiceLeaderboardItem[]
   factsPrompt: string
+  imageInsightSummary: ReportImageInsightSummary
+}
+
+export interface ReportImageInsightItem {
+  messageId: string
+  sender: string
+  time: string
+  description: string
+  ocrText?: string
+  tags: string[]
+}
+
+export interface ReportImageInsightFailure {
+  messageId?: string
+  sender: string
+  time?: string
+  error: string
+}
+
+export interface ReportImageInsightSummary {
+  total: number
+  succeeded: number
+  failed: number
+  items: ReportImageInsightItem[]
+  failures: ReportImageInsightFailure[]
+}
+
+export interface ReportPreparationProgress {
+  stage: 'selectingImages' | 'recognizingImages' | 'summarizingInput'
+  label: string
+  completed?: number
+  total?: number
+}
+
+export interface BuildGroupReportFactsOptions {
+  onProgress?: (progress: ReportPreparationProgress) => void
+  visionModel?: ReportModelChoice
 }
 
 function friendlyImageNotice(warnings: string[]): string {
@@ -76,11 +114,15 @@ function friendlyImageNotice(warnings: string[]): string {
 export const isInternalIdentifier = (value: string): boolean =>
   /@chatroom$/i.test(value) || /^wxid_/i.test(value) || /^[a-z0-9_-]{18,}$/i.test(value)
 
+const isSystemMessage = (message: Message): boolean =>
+  message.from === 'system' || message.type === '系统消息' || message.contentData?.type === 'system'
+
 export const summarySender = (
   message: Message,
   contact: Contact | null,
   isGroup: boolean
 ): string => {
+  if (isSystemMessage(message)) return '微信系统消息'
   if (message.from === 'assistant') {
     const ownGroupNickname = message.name?.trim()
     if (isGroup && ownGroupNickname && !isInternalIdentifier(ownGroupNickname)) {
@@ -95,6 +137,11 @@ export const summarySender = (
 
 export const summaryContent = (message: Message): string => {
   const data = message.contentData
+  if (message.type === '语音' || data?.type === 'voice') {
+    return message.voiceTranscript?.trim()
+      ? `[语音${data?.type === 'voice' && data.duration ? ` ${data.duration}秒` : ''}] ${message.voiceTranscript.trim()}`
+      : `[语音${data?.type === 'voice' && data.duration ? ` ${data.duration}秒` : ''}]`
+  }
   if (!data) return message.content?.trim() || `[${message.type || '消息'}]`
 
   switch (data.type) {
@@ -102,12 +149,13 @@ export const summaryContent = (message: Message): string => {
       return '[图片]'
     case 'sticker':
       return '[表情]'
-    case 'voice':
-      return `[语音${data.duration ? ` ${data.duration}秒` : ''}]`
     case 'share':
       return data.articles?.length
         ? `[分享] ${data.articles
-            .map((article) => `${article.title}${article.description ? `：${article.description}` : ''}`)
+            .map(
+              (article) =>
+                `${article.title}${article.description ? `：${article.description}` : ''}`
+            )
             .join('；')}`
         : `[分享] ${data.title}${data.des ? `：${data.des}` : ''}`
     case 'quote': {
@@ -170,12 +218,14 @@ const buildImageContext = (
   stats: string
   responseCount: number
   participantCount: number
+  interactionCount: number
   snippets: string[]
 } => {
   const baseTime = parseTimestamp(messages[index])
   const participants = new Set<string>()
   const snippets: string[] = []
   let responseCount = 0
+  let interactionCount = 0
 
   for (let offset = index + 1; offset < messages.length && offset <= index + 8; offset++) {
     const candidate = messages[offset]
@@ -189,6 +239,9 @@ const buildImageContext = (
     if (!sameSender) {
       responseCount += 1
       participants.add(sender)
+    }
+    if (candidate.contentData?.type === 'sticker' || candidate.contentData?.type === 'voice') {
+      interactionCount += 1
     }
     if (
       snippets.length < 3 &&
@@ -216,6 +269,7 @@ const buildImageContext = (
     stats: statsParts.join(' · '),
     responseCount,
     participantCount: participants.size,
+    interactionCount,
     snippets
   }
 }
@@ -224,13 +278,17 @@ const buildMediaSection = async (
   messages: Message[],
   contact: Contact | null,
   isGroup: boolean,
-  topSpeakersMap: Map<string, number>
+  topSpeakersMap: Map<string, number>,
+  options: BuildGroupReportFactsOptions = {}
 ): Promise<{
   media: GroupDailyReport['media']
   voiceLeaderboard: ReportVoiceLeaderboardItem[]
   warnings: string[]
+  imageInsightSummary: ReportImageInsightSummary
 }> => {
   const warnings: string[] = []
+  const imageFailures: ReportImageInsightFailure[] = []
+  let imageCandidateTotal = 0
   const rendererApi = typeof window === 'undefined' ? null : window.api
   const rawImageCandidates = messages
     .map((message, index) => {
@@ -248,21 +306,31 @@ const buildMediaSection = async (
         stats: context.stats,
         replyCount: context.responseCount,
         participantCount: context.participantCount,
-        score: context.responseCount * 3 + context.participantCount * 2 + 1
+        interactionCount: context.interactionCount,
+        score: calculateImageHeatScore({
+          responseCount: context.responseCount,
+          interactionCount: context.interactionCount
+        }),
+        isHot: isHotImageCandidate({
+          responseCount: context.responseCount,
+          interactionCount: context.participantCount
+        })
       }
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .filter((item) => item.isHot)
     .sort((left, right) => right.score - left.score)
     .slice(0, 6)
 
   // ============================================================
   // AI 图片理解(ImageInsightService 接入)
-  // 通过 main 进程拿 Top 3 热点图 + 已缓存的 Insight;未缓存的并发调 AI
-  // 失败不阻塞:任何错误只记日志,降级到原 gallery
+  // 通过 main 进程拿最多 3 张真正的热点图 + 已缓存的 Insight;
+  // 未缓存的并发调 AI。失败不阻塞文字日报。
   // ============================================================
   let visionGallery: ReportVisionGalleryItem[] = []
   try {
     if (!rendererApi) throw new Error('后台模式不读取 Renderer 图片')
+    options.onProgress?.({ stage: 'selectingImages', label: '筛选热点图片' })
     const sessionId = messages.find((m) => m.sessionId)?.sessionId || (contact?.md5 ?? '')
     const startTime = messages.length ? parseTimestamp(messages[0]) : 0
     const endTime = messages.length ? parseTimestamp(messages[messages.length - 1]) : 0
@@ -278,7 +346,7 @@ const buildMediaSection = async (
         sender: c.sender,
         sentAt: parseTimestamp(srcMsg),
         responseCount: c.replyCount || 0,
-        interactionCount: c.participantCount || 0
+        interactionCount: c.interactionCount || 0
       }
     })
 
@@ -290,12 +358,45 @@ const buildMediaSection = async (
       inputs: imageInputs
     })
     const candidates = candidatesResp.success ? candidatesResp.candidates : []
+    imageCandidateTotal = candidates.length
     console.log('[buildMediaSection] imageListCandidates returned', candidates.length, 'candidates')
 
+    if (!candidatesResp.success && rawImageCandidates.length) {
+      imageCandidateTotal = Math.min(3, rawImageCandidates.length)
+      for (const candidate of rawImageCandidates.slice(0, imageCandidateTotal)) {
+        imageFailures.push({
+          messageId: candidate.sourceMessageIds[0],
+          sender: candidate.sender,
+          time: candidate.time,
+          error: candidatesResp.error || '热点图片筛选失败'
+        })
+      }
+    }
+
+    options.onProgress?.({
+      stage: 'recognizingImages',
+      label: candidates.length ? '识别图片中' : '未找到可识别的热点图片',
+      completed: 0,
+      total: candidates.length
+    })
+
     // 对每个候选:缓存命中直接用,未命中并发调 imageAnalyze
+    let analyzedCount = 0
     const analyzed = await Promise.all(
       candidates.map(async (candidate) => {
-        if (candidate.insight) return candidate.insight
+        const finish = (): void => {
+          analyzedCount += 1
+          options.onProgress?.({
+            stage: 'recognizingImages',
+            label: '识别图片中',
+            completed: analyzedCount,
+            total: candidates.length
+          })
+        }
+        if (candidate.insight) {
+          finish()
+          return candidate.insight
+        }
         // 未命中:解密图片拿 base64 → 调 AI
         try {
           const img = await rendererApi.getImage(
@@ -308,6 +409,12 @@ const buildMediaSection = async (
             warnings.push(
               `${candidate.sender} ${localTime(candidate.sentAt)} 的图片读取失败：${img.error || '未知错误'}`
             )
+            imageFailures.push({
+              messageId: candidate.messageId,
+              sender: candidate.sender,
+              time: localTime(candidate.sentAt),
+              error: img.error || '图片读取失败'
+            })
             return null
           }
           const analyzeResp = await rendererApi.imageAnalyze({
@@ -317,12 +424,20 @@ const buildMediaSection = async (
             sender: candidate.sender,
             sentAt: candidate.sentAt,
             sessionId: candidate.sessionId,
+            providerId: options.visionModel?.providerId,
+            modelId: options.visionModel?.model,
             force: false
           })
           if (!analyzeResp.success || !analyzeResp.insight) {
             warnings.push(
               `${candidate.sender} ${localTime(candidate.sentAt)} 的图片识别失败：${analyzeResp.error || '模型未返回识别结果'}`
             )
+            imageFailures.push({
+              messageId: candidate.messageId,
+              sender: candidate.sender,
+              time: localTime(candidate.sentAt),
+              error: analyzeResp.error || '模型未返回识别结果'
+            })
             return null
           }
           return analyzeResp.insight
@@ -331,7 +446,15 @@ const buildMediaSection = async (
           warnings.push(
             `${candidate.sender} ${localTime(candidate.sentAt)} 的图片识别异常：${error instanceof Error ? error.message : String(error)}`
           )
+          imageFailures.push({
+            messageId: candidate.messageId,
+            sender: candidate.sender,
+            time: localTime(candidate.sentAt),
+            error: error instanceof Error ? error.message : String(error)
+          })
           return null
+        } finally {
+          finish()
         }
       })
     )
@@ -372,45 +495,26 @@ const buildMediaSection = async (
   } catch (error) {
     console.warn('[buildMediaSection] vision flow failed, fallback to empty:', error)
     warnings.push(`图片识别流程失败：${error instanceof Error ? error.message : String(error)}`)
+    if (!imageFailures.length && rawImageCandidates.length) {
+      imageCandidateTotal = Math.min(3, rawImageCandidates.length)
+      for (const candidate of rawImageCandidates.slice(0, imageCandidateTotal)) {
+        imageFailures.push({
+          messageId: candidate.sourceMessageIds[0],
+          sender: candidate.sender,
+          time: candidate.time,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
     visionGallery = []
   }
 
-  const imageCandidates = rendererApi
-    ? await Promise.all(
-        rawImageCandidates.map(async (item) => {
-          const result = await rendererApi.getImage(item.md5, item.datName, item.sessionId, {
-            includeData: true
-          })
-          if (!result.success || !result.data?.startsWith('data:image/')) return null
-          return {
-            sender: item.sender,
-            time: item.time,
-            imageUrl: result.data,
-            note: item.note,
-            stats: item.stats,
-            inferenceLabel: '基于图片后的聊天上下文推断',
-            sourceMessageIds: item.sourceMessageIds,
-            replyCount: item.replyCount,
-            score: item.score
-          }
-        })
-      )
-    : []
-
-  const gallery: ReportMediaGalleryItem[] = imageCandidates
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 4)
-    .map((item) => ({
-      sender: item.sender,
-      time: item.time,
-      imageUrl: item.imageUrl,
-      note: item.note,
-      stats: item.stats,
-      inferenceLabel: item.inferenceLabel,
-      sourceMessageIds: item.sourceMessageIds,
-      replyCount: item.replyCount
-    }))
+  options.onProgress?.({
+    stage: 'summarizingInput',
+    label: '汇总图片识别结果',
+    completed: visionGallery.length,
+    total: imageCandidateTotal
+  })
 
   const voiceMessages = messages
     .filter((message) => message.contentData?.type === 'voice')
@@ -485,11 +589,11 @@ const buildMediaSection = async (
       note: `今天一共发了 ${topSpeaker[1]} 条消息。`
     })
   }
-  if (gallery[0]) {
+  if (visionGallery[0]) {
     funBadges.push({
       title: '图片话题王',
-      owner: gallery[0].sender,
-      note: `${gallery[0].time} 的图片带动了最明显的一轮讨论。`
+      owner: visionGallery[0].sender,
+      note: `${visionGallery[0].time} 的热点图片进入了 AI 图片精选。`
     })
   }
   if (voiceLeaderboard[0]) {
@@ -502,13 +606,28 @@ const buildMediaSection = async (
 
   return {
     media: {
-      gallery,
+      // 保留旧字段以兼容历史报告，但新日报不再生成或读取“群聊相册”。
+      gallery: [],
       visionGallery,
       voiceHighlights: voiceHighlights.slice(0, 2),
       funBadges: funBadges.slice(0, 3)
     },
     voiceLeaderboard,
-    warnings
+    warnings,
+    imageInsightSummary: {
+      total: imageCandidateTotal,
+      succeeded: visionGallery.length,
+      failed: imageFailures.length,
+      items: visionGallery.map((item) => ({
+        messageId: item.messageId,
+        sender: item.sender,
+        time: item.time,
+        description: item.description,
+        ocrText: item.ocrText,
+        tags: item.tags
+      })),
+      failures: imageFailures
+    }
   }
 }
 
@@ -551,7 +670,8 @@ export const buildGroupReportFacts = async (
   messages: Message[],
   contact: Contact | null,
   isGroup: boolean,
-  reportMode: ReportMode
+  reportMode: ReportMode,
+  options: BuildGroupReportFactsOptions = {}
 ): Promise<GroupReportFactsSnapshot> => {
   const transcriptRows = messages.map((message) => ({
     id: message.id,
@@ -583,12 +703,14 @@ export const buildGroupReportFacts = async (
   for (const message of messages) {
     const sender = summarySender(message, contact, isGroup)
     const timestamp = parseTimestamp(message)
-    speakerCounts.set(sender, (speakerCounts.get(sender) || 0) + 1)
+    if (!isSystemMessage(message)) {
+      speakerCounts.set(sender, (speakerCounts.get(sender) || 0) + 1)
+      if (message.img && !avatars[sender]) avatars[sender] = message.img
+    }
     if (Number.isFinite(timestamp)) {
       const hour = new Date(timestamp).getHours()
       hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1)
     }
-    if (message.img && !avatars[sender]) avatars[sender] = message.img
     if (message.contentData?.type === 'image') imageCount += 1
     if (message.contentData?.type === 'sticker') stickerCount += 1
     if (message.contentData?.type === 'voice') {
@@ -653,11 +775,12 @@ export const buildGroupReportFacts = async (
     reportMode
   }
 
-  const { media, voiceLeaderboard, warnings } = await buildMediaSection(
+  const { media, voiceLeaderboard, warnings, imageInsightSummary } = await buildMediaSection(
     messages,
     contact,
     isGroup,
-    speakerCounts
+    speakerCounts,
+    options
   )
   if (warnings.length) metadata.warnings = [...(metadata.warnings || []), ...warnings]
   if (imageCount > 0 && !media.visionGallery?.length) {
@@ -669,18 +792,18 @@ export const buildGroupReportFacts = async (
   if (
     transcriptRows.length > 0 &&
     transcriptRows.every((row) => row.content === '[图片]') &&
+    imageInsightSummary.total > 0 &&
     !media.visionGallery?.length
   ) {
-    throw new Error('当前范围只有图片，但这些图片暂时无法分析。请改选文字消息，或在设置中验证图片理解能力。')
+    throw new Error(
+      '当前范围只有图片，但这些图片暂时无法分析。请改选文字消息，或在设置中验证图片理解能力。'
+    )
   }
 
   const factsPrompt = [
     `报告模式：${reportMode === 'compact' ? '精简版（30秒可读完）' : '完整版（保留更多上下文）'}`,
     `消息统计：共 ${transcriptRows.length} 条，活跃成员 ${speakerCounts.size} 人，图片 ${imageCount} 张，表情 ${stickerCount} 条，语音 ${voiceCount} 条（累计 ${voiceDurationSec} 秒）。`,
     activeTimeline ? `活跃时段：${activeTimeline}` : '',
-    media.gallery.length
-      ? `图片观察：${media.gallery.map((item) => `${item.time} ${item.sender} 发图（${item.stats}）`).join('；')}`
-      : '',
     // AI 图片理解结果(由 ImageInsightService 提供,缓存命中或已调用 Vision)
     (media.visionGallery?.length ?? 0) > 0
       ? `AI 图片识别摘要：${(media.visionGallery || [])
@@ -713,6 +836,7 @@ export const buildGroupReportFacts = async (
     activeTimeline,
     media,
     voiceLeaderboard,
-    factsPrompt
+    factsPrompt,
+    imageInsightSummary
   }
 }
