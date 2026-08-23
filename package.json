@@ -1,6 +1,6 @@
 {
   "name": "wemento",
-  "version": "2.1.13",
+  "version": "2.2.3",
   "packageManager": "pnpm@7.33.7",
   "description": "微念（Wemento）：macOS / Windows 本地优先的微信聊天记录搜索、整理与 AI 工作台",
   "keywords": [

@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 
 const root = path.resolve(__dirname, '../../..')
+const packageVersion = require(path.join(root, 'package.json')).version
 const fixture = structuredClone(require(path.join(root, 'tests/fixtures/chat-data.json')))
 const userData = process.env.WXE_E2E_USER_DATA
 if (!userData) throw new Error('WXE_E2E_USER_DATA is required')
@@ -258,11 +259,11 @@ handle('key:clearSavedDbKey', () => {
 handle('key:getEnvironment', () => ({
   platform: process.platform,
   osVersion: process.platform === 'win32' ? 'Windows fixture' : 'macOS fixture',
-  appVersion: 'v2.1.13',
+  appVersion: `v${packageVersion}`,
   wechatVersion: '4.1.9.57',
   dataStructureVersion: settings.dbRoot === 'fixture-account' ? '微信 4.x（WCDB）' : '未检测到',
   dataDirectoryDetected: settings.dbRoot === 'fixture-account',
-  diagnosticSummary: 'Wemento: v2.1.6\n数据目录: 已检测到',
+  diagnosticSummary: `Wemento: v${packageVersion}\n数据目录: 已检测到`,
   autoDetectSupported: true,
   wechatRunning: true,
   accountIdentified: connected,
@@ -662,7 +663,7 @@ handle('accounts:discover', (inputPath) =>
 )
 handle('agent-hub:getStatus', () => ({ state: 'disconnected', connected: false }))
 handle('agent-hub:getLogs', () => [])
-handle('app-update:getState', () => ({ status: 'idle', currentVersion: '2.1.13' }))
+handle('app-update:getState', () => ({ status: 'idle', currentVersion: packageVersion }))
 
 for (const channel of [
   'export:start',

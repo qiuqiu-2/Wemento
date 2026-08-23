@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { execFileSync } from 'child_process'
-import { createWriteStream, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { createWriteStream, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
-import { dirname, join } from 'path'
+import { dirname, join, resolve, sep } from 'path'
 import { pathToFileURL } from 'url'
+import { inflateRawSync } from 'zlib'
 import { ZipArchive } from 'archiver'
 import { renderExportPage } from '../../src/main/export-html-template'
 import type { Message } from '../../src/shared/types'
@@ -42,6 +42,65 @@ const zipDirectory = async (
     archive.directory(sourceDir, folderName)
     void archive.finalize().catch(reject)
   })
+}
+
+const extractZipArchive = (zipPath: string, destination: string): void => {
+  const archive = readFileSync(zipPath)
+  const minimumEndOffset = Math.max(0, archive.length - 65_557)
+  let endOffset = -1
+  for (let offset = archive.length - 22; offset >= minimumEndOffset; offset -= 1) {
+    if (archive.readUInt32LE(offset) === 0x06054b50) {
+      endOffset = offset
+      break
+    }
+  }
+  if (endOffset < 0) throw new Error('ZIP end-of-central-directory record is missing')
+
+  const destinationRoot = resolve(destination)
+  const entryCount = archive.readUInt16LE(endOffset + 10)
+  let offset = archive.readUInt32LE(endOffset + 16)
+  for (let index = 0; index < entryCount; index += 1) {
+    if (archive.readUInt32LE(offset) !== 0x02014b50) {
+      throw new Error(`Invalid ZIP central-directory entry at offset ${offset}`)
+    }
+    const compressionMethod = archive.readUInt16LE(offset + 10)
+    const compressedSize = archive.readUInt32LE(offset + 20)
+    const uncompressedSize = archive.readUInt32LE(offset + 24)
+    const nameLength = archive.readUInt16LE(offset + 28)
+    const extraLength = archive.readUInt16LE(offset + 30)
+    const commentLength = archive.readUInt16LE(offset + 32)
+    const localHeaderOffset = archive.readUInt32LE(offset + 42)
+    const entryName = archive.subarray(offset + 46, offset + 46 + nameLength).toString('utf8')
+    const outputPath = resolve(destinationRoot, entryName)
+    if (outputPath !== destinationRoot && !outputPath.startsWith(`${destinationRoot}${sep}`)) {
+      throw new Error(`ZIP entry escapes extraction directory: ${entryName}`)
+    }
+
+    if (entryName.endsWith('/')) {
+      mkdirSync(outputPath, { recursive: true })
+    } else {
+      if (archive.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
+        throw new Error(`Invalid ZIP local-file header for ${entryName}`)
+      }
+      const localNameLength = archive.readUInt16LE(localHeaderOffset + 26)
+      const localExtraLength = archive.readUInt16LE(localHeaderOffset + 28)
+      const dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength
+      const compressed = archive.subarray(dataOffset, dataOffset + compressedSize)
+      const content =
+        compressionMethod === 0
+          ? compressed
+          : compressionMethod === 8
+            ? inflateRawSync(compressed)
+            : undefined
+      if (!content) throw new Error(`Unsupported ZIP compression method: ${compressionMethod}`)
+      if (content.length !== uncompressedSize) {
+        throw new Error(`ZIP size mismatch for ${entryName}`)
+      }
+      mkdirSync(dirname(outputPath), { recursive: true })
+      writeFileSync(outputPath, content)
+    }
+    offset += 46 + nameLength + extraLength + commentLength
+  }
 }
 
 test('EXPORT-ARCHIVE-00 shows a loading state while archive data is still loading', async ({
@@ -149,7 +208,7 @@ test('EXPORT-ARCHIVE-01 merged v2 archive is usable offline on desktop and mobil
     const extractedDir = join(fixtureRoot, 'extracted')
     await zipDirectory(outputDir, zipPath, '合并聊天档案')
     mkdirSync(extractedDir, { recursive: true })
-    execFileSync('unzip', ['-q', zipPath, '-d', extractedDir])
+    extractZipArchive(zipPath, extractedDir)
     const offlineIndex = join(extractedDir, '合并聊天档案', 'index.html')
 
     await page.setViewportSize({ width: 1440, height: 900 })

@@ -67,8 +67,9 @@ test('P2-01 P2-02 guided connection exposes safe diagnostics and completes all s
     await fixture.page.getByRole('button', { name: '检查完成，继续' }).click()
     await fixture.page.getByRole('button', { name: '我已准备好' }).click()
     await fixture.page.getByRole('button', { name: '开始准备连接组件' }).click()
-    await expect(fixture.page.getByRole('button', { name: '微信已登录，验证连接' })).toBeEnabled()
-    await fixture.page.getByRole('button', { name: '微信已登录，验证连接' }).click()
+    const verifyConnection = fixture.page.getByRole('button', { name: '验证连接', exact: true })
+    await expect(verifyConnection).toBeEnabled()
+    await verifyConnection.click()
     await expect(fixture.page.getByRole('navigation', { name: '一级导航' })).toBeVisible()
   } finally {
     await fixture.close()
