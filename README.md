@@ -33,11 +33,11 @@
   <img src="./public/机器人.png" alt="微念（Wemento）微信机器人界面" />
 </p>
 
+---
+
 ## 微念（Wemento）是什么
 
-微念（Wemento）是一个本地优先的微信聊天记录搜索、整理与 AI 工作台。它帮助你把散落在聊天里的回忆、约定、资料和想法重新找回来，并以适合长期保存的方式留下来。
-
-“微念”里的“微”来自微信，也代表日常生活中细小但重要的片段；“念”代表记忆、牵挂与思考。英文名 Wemento 将 WeChat 与 memento（纪念、回忆）结合，表达“让微信里的记忆可被重新看见”的愿望。
+微念（Wemento）是一款**本地优先、可追溯的 AI 微信知识与分析工作台**。
 
 它可以帮你浏览、搜索和整理微信历史，也可以让 AI 帮你找回聊过的内容，并回到原始消息核对答案。
 
@@ -47,7 +47,7 @@
 >
 > “张三之前发过的项目地址在哪里？”
 >
-> “技术交流群今天有哪些结论和待办？”
+> “项目群今天有哪些结论和待办？”
 
 它和普通聊天记录查看器最大的不同，是 AI 不只是告诉你答案，还会告诉你答案来自哪里。
 
@@ -57,33 +57,61 @@ Wemento 不提供任何微信聊天数据，也不鼓励收集、上传、出售
 
 ---
 
-> [!NOTE]
-> 微念（Wemento）是基于 [WechatExplorer](https://github.com/Wxw-Gu/WechatExplorer) 的个人维护分支与发行版，保留上游项目的核心能力，并维护 Wemento 专属的 Windows 构建、兼容性修复和发布。仓库的 `main` 分支用于同步上游，`personal` 是 Wemento 的稳定集成与发行分支。
+## 为什么叫微念（Wemento）
 
-## 💬 交流与反馈
+<details>
 
-<p align="center">
-  <img src="./public/二维码.jpg" alt="Wemento 交流与售后群二维码" width="280" />
-</p>
+“微念”里的“微”来自微信，也代表日常生活中细小但重要的片段；“念”代表记忆、牵挂与思考。
+
+英文名 Wemento 将 WeChat 与 memento（纪念、回忆）结合，表达“让微信里的记忆可被重新看见”的愿望。
+
+微念不只是查看微信聊天记录的工具，而是希望让聊天中产生的信息能够被再次找到、理解、验证和沉淀。
+
+> **品牌说明**
+>
+> 微念（Wemento）是基于上游 TraceMemo（原 WechatExplorer）维护的个人分支与发行版，不是上游项目的官方品牌。
+
+</details>
+
+---
+
+## 与上游项目的关系
+
+<details>
+
+Wemento 基于 [TraceMemo（原 WechatExplorer）](https://github.com/Wxw-Gu/WechatExplorer) 持续维护，保留上游的本地搜索、AI 问答、来源追溯、日报、语音转写和 Agent 能力。
+
+本仓库同时维护 Wemento 专属的品牌、Windows 构建与兼容性修复，以及安装版和便携版统一的数据目录行为。
+
+- `main`：保持为上游 `upstream/main` 的镜像。
+- `personal`：Wemento 的稳定集成、构建与发行分支。
+
+</details>
+
+---
 
 ## 从你的任务开始
 
-| 我现在想做什么                            | 在应用里打开                                            | 需要准备什么                         |
-| ----------------------------------------- | ------------------------------------------------------- | ------------------------------------ |
-| 找一句记得原文或关键词的聊天              | [档案](./docs/user-guide/chat-archive.md)               | 连接微信数据，不需要 AI              |
-| 找一件记得大意、但不知道在哪聊过的事      | [问问微信](./docs/user-guide/ai-search.md)              | 配置 AI 服务，并选择会话和时间范围   |
-| 让长期、跨群聊查找更稳定                  | [问问微信 → 本地知识库](./docs/user-guide/knowledge.md) | 主动建立本地索引；不会自动创建       |
-| 快速了解一个群今天、昨天或近 7 天聊了什么 | [日报](./docs/user-guide/report.md)                     | 选择群聊并配置 AI 服务               |
+| 我现在想做什么                            | 在应用里打开                                                        | 需要准备什么                         |
+| ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------ |
+| 找一句记得原文或关键词的聊天              | [档案](./docs/user-guide/chat-archive.md)                           | 连接微信数据，不需要 AI              |
+| 找一件记得大意、但不知道在哪聊过的事      | [问问微信](./docs/user-guide/ai-search.md)                          | 配置 AI 服务，并选择会话和时间范围   |
+| 让长期、跨群聊查找更稳定                  | [问问微信 → 本地知识库](./docs/user-guide/knowledge.md)             | 主动建立本地索引；不会自动创建       |
+| 快速了解一个群今天、昨天或近 7 天聊了什么 | [日报](./docs/user-guide/report.md)                                 | 选择群聊并配置 AI 服务               |
 | 把群聊日报生成微信分享卡片（实验性）      | [微信分享卡片](./docs/deployment/experimental-wechat-share-card.md) | 自备 Cloudflare、域名和微信测试号    |
-| 把微信语音变成可搜索的文字                | [设置 → 语音转文字](./docs/user-guide/voice.md)         | 准备本地语音模型                     |
-| 把聊天保存成 HTML、Markdown、CSV 或 JSON  | [导出](./docs/user-guide/export.md)                     | 选择聊天、时间和格式，不需要 AI      |
-| 尽量保留之后捕获到的撤回消息              | [设置 → 防撤回](./docs/user-guide/recall-protection.md) | 默认关闭；开启前先了解写入和性能边界 |
-| 直接在微信里向 Wemento 提问               | [微信机器人](./docs/agent/agent-hub.md)                 | 扫码连接机器人；总结类任务需要 AI    |
-| 让 Codex 等外部 Agent 查询微信历史        | [外部 Agent](./docs/agent/overview.md)                  | 安装 Reader Skill 并配置本机 Token   |
+| 把微信语音变成可搜索的文字                | [设置 → 语音转文字](./docs/user-guide/voice.md)                     | 准备本地语音模型                     |
+| 把聊天保存成 HTML、Markdown、CSV 或 JSON  | [导出](./docs/user-guide/export.md)                                 | 选择聊天、时间和格式，不需要 AI      |
+| 尽量保留之后捕获到的撤回消息              | [设置 → 防撤回](./docs/user-guide/recall-protection.md)             | 默认关闭；开启前先了解写入和性能边界 |
+| 直接在微信里向 Wemento 提问               | [微信机器人](./docs/agent/agent-hub.md)                             | 扫码连接机器人；总结类任务需要 AI    |
+| 让 Codex 等外部 Agent 查询微信历史        | [外部 Agent](./docs/agent/overview.md)                              | 安装 Reader Skill 并配置本机 Token   |
+
+---
 
 ## 最核心的三个能力
 
 ### 生成群聊日报
+
+<details>
 
 选择群聊和时间范围后，可以让 AI 把聊天整理成报告，并保存为 HTML 与 PNG 长图。
 
@@ -99,6 +127,7 @@ Wemento 不提供任何微信聊天数据，也不鼓励收集、上传、出售
 - 图片精选
 
 具体内容取决于消息、媒体是否可读以及模型能力。
+
 详细说明：[生成群聊日报](./docs/user-guide/report.md)
 
 </details>
@@ -107,7 +136,9 @@ Wemento 不提供任何微信聊天数据，也不鼓励收集、上传、出售
 
 打开“问问微信”，选择搜索范围和时间，然后像提问一样描述你想找的内容。
 
-Wemento 会先在本机查找候选消息，再把整理后的少量来源交给你配置的 AI 模型生成回答。你可以查看答案参考了哪些聊天、来自哪个人和时间，并从来源标记跳回原始消息核对；“查看检索详情”还会展示本次查找经历了哪些阶段。
+Wemento 会先在本机查找候选消息，再把整理后的少量来源交给你配置的 AI 模型生成回答。
+
+你可以查看答案参考了哪些聊天、来自哪个人和时间，并从来源标记跳回原始消息核对；“查看检索详情”还会展示本次查找经历了哪些阶段。
 
 <p align="center">
   <img src="./public/问一问.png" alt="问问微信与聊天来源" />
@@ -117,17 +148,30 @@ Wemento 会先在本机查找候选消息，再把整理后的少量来源交给
 
 ### 直接在微信里问你的历史聊天
 
-打开应用中的“Agent”入口（页面标题为“Agent Hub”，对应微信机器人功能），扫码连接一个微信机器人账号。例如，你可以直接给机器人发送“最近 5 个会话”“张三最近和我聊了什么”，或者让它生成指定群聊的总结图片。Wemento 会在本机读取已连接的聊天数据并把结果回复到微信。
+打开应用中的“Agent”入口（页面标题为“Agent Hub”，对应微信机器人功能），扫码连接一个微信机器人账号。
 
 例如，你可以直接给机器人发送：
 
+- “最近 5 个会话”
+- “张三最近和我聊了什么”
+- “总结今天的项目群”
+
+Wemento 会在本机读取已连接的聊天数据并把结果回复到微信。
+
+这个入口不要求另外安装 Codex、Claude Code 等外部 Agent。
+
+当前主要处理文字消息，不支持群发、定时任务或通用自主操作微信；总结和自然语言理解需要先配置 AI 服务。
+
 详细步骤和能力边界见[在微信里向 Wemento 提问](./docs/agent/agent-hub.md)。
+
+---
 
 ## 其他能力
 
 ### 本地知识库
 
 <details>
+
 “问问微信”里的“本地知识库”会为当前微信账号建立一份留在本机的可检索资料。
 
 它把聊天文本、附件信息和已有语音转写整理起来，让跨会话、跨时间查找更稳定。
@@ -141,7 +185,8 @@ Wemento 会先在本机查找候选消息，再把整理后的少量来源交给
 ### 实验性：生成微信分享卡片
 
 <details>
-Wemento 可以把群聊日报长图上传到你自己部署的 Cloudflare Worker 和 R2，并生成可在微信中分享的临时网页、二维码及卡片信息。
+
+Wemento 可以把群聊日报长图上传到你自己部署的 Cloudflare Worker 和 R2，并生成可在微信中分享的临时网页和卡片信息。
 
 该功能需要自备 Cloudflare 账号、域名和微信测试号，目前不属于开箱即用的稳定功能。
 
@@ -157,19 +202,30 @@ Wemento 可以把群聊日报长图上传到你自己部署的 Cloudflare Worker
 
 ### 转写微信语音
 
-Wemento 支持在本机转写单条或批量微信语音，结果可以参与本地知识库检索和 HTML 导出。转写本身不要求把语音文件发送给在线 AI；随后用于 AI 问答或日报时，文字会按对应功能的规则处理。
+<details>
+
+Wemento 支持在本机转写单条或批量微信语音，结果可以参与本地知识库检索和 HTML 导出。
+
+转写本身不要求把语音文件发送给在线 AI；随后用于 AI 问答或日报时，文字会按对应功能的规则处理。
 
 详细说明：[语音转文字](./docs/user-guide/voice.md)
 
+</details>
+
 ### 防撤回
+
+<details>
 
 可选开启后，Wemento 会尽量保留开启期间捕获到的撤回消息。该能力受微信版本和应用运行状态影响，不保证找回所有内容，也不能恢复开启前已经撤回的消息。
 
 详细说明：[防撤回](./docs/user-guide/recall-protection.md)
 
+</details>
+
 ### 导出长期可用的聊天档案
 
 <details>
+
 支持 HTML、CSV、JSON 和 Markdown。
 
 HTML 可携带媒体、头像和可选语音转写，支持最多五个会话合并，也可以压缩为 ZIP；增量合并、媒体资源和 ZIP 只适用于 HTML，其他格式主要保留文本内容。
@@ -181,6 +237,7 @@ HTML 可携带媒体、头像和可选语音转写，支持最多五个会话合
 ### 在外部 Agent 中查询微信历史
 
 <details>
+
 通过 Reader Skill 和本机 Local HTTP API，Codex、Claude Code、OpenClaw 等外部 Agent 可以按需查询联系人、群聊和聊天记录。
 
 这和微信机器人是两条不同路径：
@@ -225,12 +282,16 @@ flowchart LR
 
 ## 支持平台与安装包
 
-| 平台    | 处理器架构                           | Releases 安装包                  |
-| ------- | ------------------------------------ | -------------------------------- |
-| Windows | x64                                  | `wemento-<版本>-setup.exe` 或便携 ZIP |
-| macOS   | Intel（x64）、Apple Silicon（arm64） | `wemento-<版本>-<架构>.dmg`      |
+| 平台    | 处理器架构                     | Releases 安装包                       |
+| ------- | ------------------------------ | ------------------------------------- |
+| Windows | x64                            | `wemento-<版本>-setup.exe` 或便携 ZIP |
+| macOS   | Apple Silicon（M 系列、arm64） | `wemento-<版本>-arm64.dmg`            |
+
+当前版本不支持 Intel 芯片的 Mac。
 
 当前代码面向微信 4.x 数据结构。实际连接结果仍会受到微信客户端版本、账号数据状态和系统权限影响；macOS 首次连接可能需要按页面提示完成额外授权。
+
+---
 
 ## 版本与发布
 
@@ -241,6 +302,8 @@ flowchart LR
 - 同时支持安装版、解压便携版和单文件 Portable EXE，并在升级或普通卸载时保留 `data`。
 
 正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.13 发布说明](./docs/release-notes-v2.1.13.md)。
+
+---
 
 ## 快速开始
 
@@ -259,6 +322,8 @@ Windows 安装后无法启动时，请先安装 [Microsoft Visual C++ x64 运行
 如果 macOS 页面提示处理 SIP，请先阅读对应说明。具体步骤和限制见[第一次使用](./docs/user-guide/getting-started.md)。
 
 完整步骤：[第一次使用 Wemento](./docs/user-guide/getting-started.md)
+
+---
 
 ## 配置 AI
 
@@ -295,7 +360,7 @@ Windows 安装后无法启动时，请先安装 [Microsoft Visual C++ x64 运行
 
 ## 本地开发
 
-需要 Node.js、pnpm 7+、对应平台的 Electron/native 构建环境，以及 Go（用于微信连接器）。
+需要 Node.js、`pnpm@7.33.7`、对应平台的 Electron/native 构建环境，以及 Go（用于微信连接器）。
 
 ```bash
 pnpm install
@@ -318,9 +383,7 @@ pnpm test:e2e:build
 
 ## 支持与反馈
 
-遇到问题时，先查看[常见问题与排查](./docs/user-guide/troubleshooting.md)。提交 [Issue](https://github.com/qiuqiu-2/Wemento/issues) 时请提供操作系统、微信版本、Wemento 版本、复现步骤和已遮挡敏感信息的截图。
-
-提交 Issue 时请提供：
+遇到问题时，先查看[常见问题与排查](./docs/user-guide/troubleshooting.md)。提交 [Issue](https://github.com/qiuqiu-2/Wemento/issues) 时请提供：
 
 - 操作系统
 - 微信版本
@@ -338,15 +401,31 @@ pnpm test:e2e:build
 
 仓库中的第三方组件、模型和连接器遵循各自的许可证。Wemento 基于上游 WechatExplorer 维护；当前仓库根目录未提供独立的项目 `LICENSE` 文件，贡献、复制或再分发前，请先向上游及本仓库维护者确认适用的许可范围。
 
+---
+
 ## 致谢
 
-Wemento 基于上游 [TraceMemo（原 WechatExplorer）](https://github.com/Wxw-Gu/WechatExplorer) 持续维护，并保留上游关于本地搜索、AI 问答、来源追溯、日报、语音转写和 Agent 能力的工作。
+Wemento 基于上游 [TraceMemo（原 WechatExplorer）](https://github.com/Wxw-Gu/WechatExplorer) 持续维护。
 
-特别感谢 [WeFlow](https://github.com/hicccc77/WeFlow) 及作者 **hicccc77**。项目在支持微信 4.x 时参考并使用了 WeFlow 历史版本中的数据库密钥获取、图片解密等实现与思路。
+### 特别感谢 WeFlow
 
-其他参考项目包括：
+项目在支持微信 4.x 时，参考并使用了 **[WeFlow](https://github.com/hicccc77/WeFlow)** 历史版本中的相关实现和思路，包括数据库密钥获取、图片解密等底层能力。
 
-- [WechatMessageExplorer](https://github.com/svcvit/WechatMessageExplorer)：提供数据库解析相关思路；
-- [chatlog](https://github.com/sjzar/chatlog)：提供数据处理方面的参考。
+特别感谢作者 **hicccc77** 的理解和包容。
+
+### 其他参考项目
+
+- **[WechatMessageExplorer](https://github.com/svcvit/WechatMessageExplorer)**
+  - 提供了数据库解析相关思路。
+- **[chatlog](https://github.com/sjzar/chatlog)**
+  - 提供了数据处理方面的参考。
 
 感谢所有开源作者，以及所有帮助 Wemento 发现问题、提出建议和持续使用它的人。
+
+---
+
+<p align="center">
+  <b>微念（Wemento）</b>
+  <br />
+  把微信聊过的事，找回来、问清楚、留下来。
+</p>
