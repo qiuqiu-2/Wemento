@@ -295,13 +295,14 @@ flowchart LR
 
 ## 版本与发布
 
-当前已发布版本为 **v2.1.13**。近期 Wemento 发布重点包括：
+当前已发布版本为 **v2.2.3**。本次 Wemento 发布重点包括：
 
-- 将设置、密钥、缓存、模型、日志、导出、日报和连接器状态统一到程序目录下的 `data`；
-- 从 `%APPDATA%\WechatExplorer` 等旧位置安全复制已有数据，不覆盖新文件，也不自动删除旧副本；
-- 同时支持安装版、解压便携版和单文件 Portable EXE，并在升级或普通卸载时保留 `data`。
+- 同步上游至 `3a6d4b9`，纳入 TraceMemo v2.2.2 的导出、日报、语音转写、AI 模型和实验性微信分享卡片等改进；
+- 继续把设置、密钥、缓存、模型、日志、导出、日报和连接器状态统一保存在程序目录下的 `data`；
+- 更早初始化 Windows 数据路径，避免 Electron 默认路径在 `%APPDATA%` 下创建不需要的 Wemento 数据目录；
+- 更新 Wemento 文档结构，并保留 Wemento 品牌、构建、安装和数据迁移行为。
 
-正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.1.13 发布说明](./docs/release-notes-v2.1.13.md)。
+正式版本从 `personal` 分支构建并发布到 [GitHub Releases](https://github.com/qiuqiu-2/Wemento/releases)。`main` 只作为上游镜像，不用于 Wemento 版本发布。详细变更见 [v2.2.3 发布说明](./docs/release-notes-v2.2.3.md)。
 
 ---
 
